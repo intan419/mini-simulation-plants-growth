@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌻 Simulator Pertumbuhan Bunga Matahari | Real Growth Stages + Canvas Animation</title>
+<title>🌻 Simulator Pertumbuhan Bunga Matahari | Canvas Animation + Chart</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -27,7 +27,6 @@
     .analysis-box h3 { color: #ffcd7e; margin-bottom: 12px; }
     .flower-area { text-align: center; margin: 15px 0; }
     canvas#flowerCanvas { width: 100%; max-width: 350px; height: auto; background: #c9a87b; border-radius: 40px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); display: block; margin: 0 auto; aspect-ratio: 350/280; }
-    
     .badge { background: #f5b642; color: #2d2b1f; padding: 4px 12px; border-radius: 40px; display: inline-block; font-weight: bold; }
     .status-alert { background: #c7254e; color: white; padding: 8px 16px; border-radius: 40px; font-weight: bold; animation: pulse 1s infinite; }
     .status-warning { background: #e67e22; color: white; padding: 8px 16px; border-radius: 40px; font-weight: bold; }
@@ -36,7 +35,7 @@
     @media (max-width:700px){ .container{grid-template-columns:1fr;} h1{font-size:1.3rem;} }
     .stress-indicator { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
     .stress-tag { background: #c0392b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
-    #growthChart { background: #fffef7; border-radius: 24px; padding: 12px; margin-top: 20px; max-height: 350px; }
+    #growthChart { background: #fffef7; border-radius: 24px; padding: 12px; margin-top: 20px; max-height: 350px; width: 100%; }
     .phase-table { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 10px 0; font-size: 10px; }
     .phase-tag { background: #2c2b26; color: #ffec80; padding: 3px 8px; border-radius: 20px; }
 </style>
@@ -46,7 +45,7 @@
 <div class="main">
 
 <h1>🌻 Simulator Pertumbuhan Bunga Matahari</h1>
-<div class="subtitle">🌱 Siklus Hidup Realistis: Dormancy → Germination → Seedling → Vegetative → Flowering → Maturation → Senescence</div>
+<div class="subtitle">🌱 Siklus Hidup Realistis + Animasi Canvas + Grafik Perbandingan</div>
 
 <div class="phase-table">
     <span class="phase-tag">🌰 Dormancy (0-5hr)</span>
@@ -111,12 +110,12 @@
     <div class="analysis-box"><h3>🌱 Respon Tanaman</h3><div id="plantInfo">-</div></div>
 </div>
 
-<canvas id="growthChart"></canvas>
+<canvas id="growthChart" width="800" height="300"></canvas>
 
 </div>
 
 <script>
-    // STATE
+    // ========== STATE ==========
     let modes = {
         normal: { day: 0, height: 0, history: [0], isDead: false, deadCause: null, deathType: null },
         experiment: { day: 0, height: 0, history: [0], isDead: false, deadCause: null, deathType: null }
@@ -127,7 +126,7 @@
     let env = { water:100, light:80, temp:27, ph:6.5, humidity:60, fertilizer:"npk", fertDose:50, season:"optimal" };
     const MAX_HEIGHT = 250;
     
-    // TARGET TINGGI REALISTIS
+    // ========== TARGET TINGGI REALISTIS ==========
     function getTargetHeight(day) {
         if(day<=5) return 0;
         if(day<=10) return 1 + (day-5)*0.4;
@@ -139,7 +138,6 @@
         return Math.max(0, 250 - (day-90)*3.2);
     }
     
-    // GET FASE (untuk teks)
     function getPhaseName(day, isDead) {
         if(isDead) return "Mati";
         if(day<=5) return "Dormancy";
@@ -152,7 +150,6 @@
         return "Senescence";
     }
     
-    // GET STAGE (untuk animasi canvas)
     function getStage(day, isDead) {
         if(isDead) return 8;
         if(day<=5) return 1;
@@ -165,24 +162,23 @@
         return 8;
     }
     
-    // DETEKSI PENYEBAB KEMATIAN
+    // ========== DETEKSI KEMATIAN ==========
     function getDeathCause() {
         let state = modes[currentMode];
-        
         if(state.day >= 8 && state.day <= 20 && state.height < 2 && !state.isDead) {
             return { type:"germ_fail", cause:"🌱 GAGAL BERKECAMBAH", detail:"Biji tidak berkecambah karena kondisi lingkungan tidak mendukung." };
         }
         if(env.water < 35) return { type:"drought", cause:"💧 MATI KEKERINGAN", detail:`Air hanya ${env.water} mm/hari (ideal 80-120).` };
-        if(env.water > 170) return { type:"waterlog", cause:"💧 MATI GENANGAN AIR", detail:`Air ${env.water} mm/hari. Akar membusuk.` };
-        if(env.light < 25) return { type:"dark", cause:"☀️ MATI KURANG CAHAYA", detail:`Cahaya hanya ${env.light}%. Fotosintesis terhenti.` };
-        if(env.temp > 38) return { type:"heat", cause:"🌡️ MATI PANAS EKSTRIM", detail:`Suhu ${env.temp}°C.` };
+        if(env.water > 170) return { type:"waterlog", cause:"💧 MATI GENANGAN", detail:`Air ${env.water} mm/hari. Akar membusuk.` };
+        if(env.light < 25) return { type:"dark", cause:"☀️ MATI KURANG CAHAYA", detail:`Cahaya ${env.light}%. Fotosintesis terhenti.` };
+        if(env.temp > 38) return { type:"heat", cause:"🌡️ MATI PANAS", detail:`Suhu ${env.temp}°C.` };
         if(env.temp < 10) return { type:"cold", cause:"🌡️ MATI BEKU", detail:`Suhu ${env.temp}°C.` };
         if(env.ph < 5.0) return { type:"ph", cause:"⚗️ MATI pH ASAM", detail:`pH ${env.ph}. Toksisitas Aluminium.` };
         if(env.ph > 8.0) return { type:"ph", cause:"⚗️ MATI pH BASA", detail:`pH ${env.ph}. Hara tidak tersedia.` };
         if(env.humidity < 25) return { type:"hum", cause:"💨 MATI KELEMBABAN RENDAH", detail:`Kelembaban ${env.humidity}%.` };
         if(env.humidity > 85) return { type:"hum", cause:"💨 MATI KELEMBABAN TINGGI", detail:`Kelembaban ${env.humidity}%.` };
         if(env.fertilizer !== "none" && env.fertDose > 85) return { type:"fert", cause:"🧪 MATI OVERDOSIS PUPUK", detail:`Dosis ${env.fertDose}%.` };
-        if(state.day > 100 && state.height < 20) return { type:"old", cause:"🍂 MATI USIA TUA", detail:`Siklus hidup selesai.` };
+        if(state.day > 100 && state.height < 20) return { type:"old", cause:"🍂 MATI USIA TUA", detail:"Siklus hidup selesai." };
         return null;
     }
     
@@ -198,7 +194,7 @@
         return false;
     }
     
-    // FAKTOR PERTUMBUHAN
+    // ========== FAKTOR PERTUMBUHAN ==========
     function getGrowthFactor(state) {
         if(state.isDead) return 0;
         let wf = (env.water>=70 && env.water<=130) ? 1 : (env.water<40?0.3:(env.water>160?0.45:0.7));
@@ -238,9 +234,7 @@
             state.height = parseFloat((state.height + growth).toFixed(2));
             if(state.height>MAX_HEIGHT) state.height=MAX_HEIGHT;
             state.day++;
-            if(state.day>90 && !state.isDead) {
-                state.height = Math.max(0, state.height - 1.2);
-            }
+            if(state.day>90 && !state.isDead) state.height = Math.max(0, state.height - 1.2);
             updateDeath(state);
             state.history.push(state.height);
             if(state.history.length>200) state.history.shift();
@@ -252,7 +246,7 @@
     
     function changeDay(delta) { advanceDays(delta); }
     
-    // RESET FUNCTIONS
+    // ========== RESET ==========
     function resetCurrentMode() {
         modes[currentMode] = { day:0, height:0, history:[0], isDead:false, deadCause:null, deathType:null };
         if(currentMode==="normal") resetToOptimal();
@@ -289,6 +283,7 @@
     // ========== CANVAS ANIMASI BUNGA ==========
     function drawSunflower() {
         let canvas = document.getElementById("flowerCanvas");
+        if(!canvas) return;
         let ctx = canvas.getContext("2d");
         let w = canvas.width = 350;
         let h = canvas.height = 280;
@@ -304,7 +299,6 @@
         let stemTopY = groundY - stemHeight;
         let stemX = w/2;
         
-        // Efek visual berdasarkan jenis kematian
         if(isDead && deathType) {
             if(deathType==="drought") ctx.filter = "sepia(0.7) brightness(0.45) contrast(1.2)";
             else if(deathType==="waterlog") ctx.filter = "blur(2px) brightness(0.6)";
@@ -312,20 +306,14 @@
             else if(deathType==="ph") ctx.filter = "sepia(0.6) hue-rotate(-15deg) brightness(0.55)";
             else if(deathType==="hum") ctx.filter = "brightness(0.65) saturate(0.5)";
             else if(deathType==="fert") ctx.filter = "sepia(0.5) contrast(1.3) brightness(0.65)";
-            else if(deathType==="old" || deathType==="germ_fail") ctx.filter = "grayscale(0.5) brightness(0.7)";
-        } else if(state.height < getTargetHeight(state.day)*0.4 && state.day>10) {
-            ctx.filter = "sepia(0.2) brightness(0.8)";
-        } else {
-            ctx.filter = "none";
-        }
+            else ctx.filter = "grayscale(0.5) brightness(0.7)";
+        } else ctx.filter = "none";
         
-        // Tanah
         ctx.fillStyle = "#8B5A2B";
         ctx.fillRect(0, groundY-6, w, 24);
         ctx.fillStyle = "#A0522D";
         for(let i=0;i<10;i++) ctx.fillRect(i*40, groundY-5, 18, 4);
         
-        // Jika mati total
         if((stage===8 && state.height<5) || (isDead && state.height<3)) {
             ctx.fillStyle = "#6B4226";
             ctx.beginPath(); ctx.ellipse(stemX, groundY-10, 12, 6, 0, 0, Math.PI*2); ctx.fill();
@@ -336,11 +324,9 @@
             return;
         }
         
-        // Batang
         ctx.fillStyle = (isDead || stage===8) ? "#7A5A3A" : (stage>=5 ? "#4A7A2A" : "#6B8E3A");
         ctx.fillRect(stemX-4, stemTopY, 8, stemHeight);
         
-        // Daun (stage 3+)
         if(stage >= 3 && !isDead) {
             ctx.fillStyle = (stage===8) ? "#8B6B3A" : "#5A9A2A";
             let leafSize = 7 + (stage-3)*2;
@@ -348,7 +334,6 @@
             ctx.beginPath(); ctx.ellipse(stemX+12, stemTopY+stemHeight*0.55, leafSize, leafSize*0.6, 0.7, 0, Math.PI*2); ctx.fill();
         }
         
-        // Kepala bunga berdasarkan stage
         let headSize = 0;
         let hasFlower = false;
         if(stage===1) headSize = 8;
@@ -359,10 +344,8 @@
         else if(stage===6) { headSize = 35; hasFlower = true; }
         else if(stage===7) { headSize = 40; hasFlower = true; }
         else headSize = 32;
-        
         if(isDead) headSize = Math.max(18, headSize * 0.7);
         
-        // Kelopak bunga (stage 6+)
         if(hasFlower && !isDead && stage>=6) {
             ctx.fillStyle = "#F5C542";
             for(let a=0;a<12;a++) {
@@ -373,13 +356,11 @@
             }
         }
         
-        // Pusat bunga
         if(isDead || stage===8) ctx.fillStyle = "#8B6B3A";
         else if(stage>=6) ctx.fillStyle = "#C88A2A";
         else ctx.fillStyle = "#6B9A3A";
         ctx.beginPath(); ctx.arc(stemX, stemTopY-4, headSize*0.45, 0, Math.PI*2); ctx.fill();
         
-        // Biji (stage 7)
         if(stage===7 && !isDead) {
             ctx.fillStyle = "#5A3A1A";
             for(let b=0;b<12;b++) {
@@ -390,15 +371,10 @@
             }
         }
         
-        // Efek tetesan air jika kelebihan air
         if(env.water > 160 && !isDead && stage>=3) {
             ctx.fillStyle = "#4A9ACE";
-            for(let d=0;d<3;d++) {
-                ctx.beginPath(); ctx.ellipse(stemX-10 + d*10, stemTopY+stemHeight*0.7 + d*3, 2, 3, 0, 0, Math.PI*2); ctx.fill();
-            }
+            for(let d=0;d<3;d++) ctx.beginPath(), ctx.ellipse(stemX-10 + d*10, stemTopY+stemHeight*0.7 + d*3, 2, 3, 0, 0, Math.PI*2), ctx.fill();
         }
-        
-        // Efek tanah retak jika kekeringan
         if(env.water < 45 && !isDead && stage>=3) {
             ctx.fillStyle = "#C8A050";
             for(let c=0;c<5;c++) ctx.fillRect(stemX-20 + c*12, groundY-4, 3, 6);
@@ -407,7 +383,7 @@
         ctx.filter = "none";
     }
     
-    // UPDATE UI
+    // ========== UPDATE UI ==========
     function updateUI() {
         let state = modes[currentMode];
         let phaseName = getPhaseName(state.day, state.isDead);
@@ -416,7 +392,6 @@
         document.getElementById("phase").innerHTML = phaseName;
         document.getElementById("modeBadge").innerHTML = currentMode==="normal"?"🌿 Normal":"🧪 Eksperimen";
         
-        // Status kesehatan
         let statusSpan = document.getElementById("healthStatus");
         if(state.isDead && state.deadCause) {
             statusSpan.className = "status-dead";
@@ -432,7 +407,6 @@
             statusSpan.innerHTML = "❤️ Sehat & Tumbuh";
         }
         
-        // Stress list
         let stressDiv = document.getElementById("stressList");
         if(!state.isDead) {
             let problems = [];
@@ -453,7 +427,6 @@
             stressDiv.innerHTML = '<span class="stress-tag">💀 Tanaman mati, silakan reset</span>';
         }
         
-        // Treatment info
         let fertName = env.fertilizer==="npk"?"NPK":(env.fertilizer==="organic"?"Organik":"Tidak pakai");
         document.getElementById("treatmentInfo").innerHTML = `
             💧 Air: ${env.water} mm (80-120) | ☀️ Cahaya: ${env.light}% (70-90)<br>
@@ -462,14 +435,13 @@
             🍂 Musim: ${env.season==="optimal"?"Optimal":(env.season==="kemarau"?"Kemarau":"Hujan")}
         `;
         
-        // Plant response
         let target = getTargetHeight(state.day);
         let persen = target>0 ? ((state.height/target)*100).toFixed(0) : 0;
         if(state.isDead && state.deadCause) {
             document.getElementById("plantInfo").innerHTML = `
                 💀 <strong>${state.deadCause.cause}</strong><br>
                 📏 Tinggi akhir: ${state.height.toFixed(1)} cm<br>
-                📖 <em>${state.deadCause.detail}</em><br>
+                📖 ${state.deadCause.detail}<br>
                 💡 Gunakan Reset Mode untuk memulai ulang.
             `;
         } else {
@@ -482,23 +454,29 @@
         }
     }
     
-    // GRAFIK
+    // ========== GRAFIK CHART.JS ==========
     function updateChart() {
         let normalHist = modes.normal.history.slice(-80);
         let expHist = modes.experiment.history.slice(-80);
         let labels = normalHist.map((_,i)=>i);
-        if(growthChart) growthChart.destroy();
         let ctx = document.getElementById("growthChart").getContext("2d");
+        if(growthChart) growthChart.destroy();
         growthChart = new Chart(ctx, {
-            type:'line',
-            data:{ labels:labels, datasets:[
-                { label:'🌿 Mode Normal', data:normalHist, borderColor:'#4caf50', backgroundColor:'rgba(76,175,80,0.1)', tension:0.3, fill:true },
-                { label:'🧪 Mode Eksperimen', data:expHist, borderColor:'#ff9800', backgroundColor:'rgba(255,152,0,0.05)', tension:0.3, fill:true }
-            ]},
-            options:{ responsive:true, maintainAspectRatio:true, plugins:{ legend:{ position:'top' } }, scales:{ y:{ title:{ display:true, text:'Tinggi (cm)' }, beginAtZero:true, max:MAX_HEIGHT } } }
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: '🌿 Mode Normal', data: normalHist, borderColor: '#4caf50', backgroundColor: 'rgba(76,175,80,0.1)', tension: 0.3, fill: true, pointRadius: 3 },
+                    { label: '🧪 Mode Eksperimen', data: expHist, borderColor: '#ff9800', backgroundColor: 'rgba(255,152,0,0.05)', tension: 0.3, fill: true, pointRadius: 3 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} cm` } } },
+                scales: { y: { title: { display: true, text: 'Tinggi (cm)' }, beginAtZero: true, max: MAX_HEIGHT } }
+            }
         });
     }
     
-    // BIND INPUT
-    function bindInputs() {
-       
+    // ========== BIND INPUT =========
