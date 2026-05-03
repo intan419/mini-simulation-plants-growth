@@ -1,479 +1,8 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🌻 Simulator Pertumbuhan Bunga Matahari | Layu & Mati</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        background: linear-gradient(135deg, #1a5f2a 0%, #0d3b1a 100%);
-        font-family: 'Poppins', sans-serif;
-        padding: 20px;
-        min-height: 100vh;
-    }
-
-    .main {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    h1 {
-        text-align: center;
-        color: #ffec80;
-        text-shadow: 3px 3px 0 #b45f1b;
-        margin-bottom: 20px;
-        font-size: 1.8rem;
-    }
-
-    .card {
-        background: rgba(255, 248, 225, 0.95);
-        border-radius: 20px;
-        padding: 16px 20px;
-        margin: 10px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        backdrop-filter: blur(4px);
-    }
-
-    .center {
-        text-align: center;
-    }
-
-    .container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 12px;
-        margin: 16px 0;
-    }
-
-    label {
-        font-weight: 600;
-        color: #5a3a1a;
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-    }
-
-    input, select {
-        width: 100%;
-        padding: 8px;
-        border-radius: 30px;
-        border: 1px solid #d4a259;
-        background: #fffae9;
-        font-family: inherit;
-    }
-
-    input[type="range"] {
-        padding: 0;
-    }
-
-    button {
-        background: #f5b642;
-        border: none;
-        padding: 10px 20px;
-        margin: 5px;
-        border-radius: 40px;
-        font-weight: bold;
-        font-family: inherit;
-        cursor: pointer;
-        transition: 0.2s;
-        box-shadow: 0 3px 0 #a5661a;
-    }
-
-    button:active {
-        transform: translateY(2px);
-        box-shadow: 0 1px 0 #a5661a;
-    }
-
-    button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    .analysis-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin: 20px 0;
-    }
-
-    .analysis-box {
-        flex: 1;
-        background: #2c2b26;
-        color: #f9eec1;
-        border-radius: 20px;
-        padding: 16px;
-        min-width: 200px;
-    }
-
-    .analysis-box h3 {
-        color: #ffcd7e;
-        margin-bottom: 12px;
-    }
-
-    #growthChart {
-        background: #fffef7;
-        border-radius: 24px;
-        padding: 12px;
-        margin-top: 20px;
-        max-height: 350px;
-    }
-
-    canvas#flowerCanvas {
-        display: block;
-        margin: 0 auto;
-        background: #e9c891;
-        border-radius: 60px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        width: 100%;
-        max-width: 380px;
-        height: auto;
-    }
-
-    .flower-area {
-        text-align: center;
-        margin: 15px 0;
-    }
-
-    .badge {
-        background: #f5b642;
-        color: #2d2b1f;
-        padding: 4px 12px;
-        border-radius: 40px;
-        display: inline-block;
-        font-weight: bold;
-    }
-
-    .status-alert {
-        background: #c7254e;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 40px;
-        font-weight: bold;
-        animation: pulse 1s infinite;
-    }
-
-    .status-warning {
-        background: #e67e22;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 40px;
-        font-weight: bold;
-    }
-
-    .status-dead {
-        background: #5a2a1a;
-        color: #ddd;
-        padding: 8px 16px;
-        border-radius: 40px;
-        font-weight: bold;
-    }
-
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.7; }
-        100% { opacity: 1; }
-    }
-
-    @media (max-width: 700px) {
-        .container {
-            grid-template-columns: 1fr;
-        }
-        h1 {
-            font-size: 1.3rem;
-        }
-    }
-
-    .stress-indicator {
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-        margin-top: 10px;
-        flex-wrap: wrap;
-    }
-
-    .stress-tag {
-        background: #c0392b;
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: bold;
-    }
-
-    .phase-table {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 6px;
-        margin: 10px 0;
-        font-size: 10px;
-    }
-
-    .phase-tag {
-        background: #2c2b26;
-        color: #ffec80;
-        padding: 3px 8px;
-        border-radius: 20px;
-    }
-</style>
-</head>
-
-<body>
-<div class="main">
-
-<h1>🌻 Simulator Pertumbuhan Bunga Matahari</h1>
-
-<div class="phase-table">
-    <span class="phase-tag">🌰 Dormancy (0-5hr, 0cm)</span>
-    <span class="phase-tag">🌱 Germination (5-10hr, 1-3cm)</span>
-    <span class="phase-tag">🌿 Seedling (10-20hr, 5-15cm)</span>
-    <span class="phase-tag">🍃 Early Veg (20-40hr, 20-80cm)</span>
-    <span class="phase-tag">🌳 Late Veg (40-60hr, 80-150cm)</span>
-    <span class="phase-tag">🌻 Flowering (60-75hr, 150-220cm)</span>
-    <span class="phase-tag">🌾 Maturation (75-90hr, 200-250cm)</span>
-    <span class="phase-tag">🍂 Senescence (90+hr, turun)</span>
-</div>
-
-<div class="card center">
-    🎮 Mode: 
-    <select id="mode">
-        <option value="normal">🌿 Normal</option>
-        <option value="experiment">🧪 Eksperimen</option>
-    </select>
-    <span style="margin-left: 15px;" class="badge" id="modeBadge">Normal</span>
-</div>
-
-<div class="card center" id="statusCard">
-    📆 <strong>Hari:</strong> <span id="day">0</span> &nbsp;&nbsp;|&nbsp;&nbsp;
-    📏 <strong>Tinggi:</strong> <span id="height">0.0</span> cm &nbsp;&nbsp;|&nbsp;&nbsp;
-    🌱 <strong>Fase:</strong> <span id="phase">Dormancy</span>
-    <br><br>
-    <span id="healthStatus" class="badge">❤️ Sehat</span>
-</div>
-
-<div class="flower-area">
-    <canvas id="flowerCanvas" width="380" height="280"></canvas>
-</div>
-
-<div class="stress-indicator" id="stressList"></div>
-
-<div class="container">
-    <div class="card"><label>💧 Air: <span id="waterVal">100</span> mm/hari</label><input id="water" type="range" min="0" max="200" value="100"></div>
-    <div class="card"><label>☀️ Cahaya: <span id="lightVal">80</span> %</label><input id="light" type="range" min="0" max="100" value="80"></div>
-    <div class="card"><label>🌡️ Suhu: <span id="tempVal">27</span> °C</label><input id="temp" type="range" min="10" max="40" value="27"></div>
-    <div class="card"><label>⚗️ pH Tanah: <span id="phVal">6.5</span></label><input id="ph" type="range" min="3" max="9" step="0.1" value="6.5"></div>
-    <div class="card"><label>💨 Kelembaban: <span id="humVal">60</span> %</label><input id="humidity" type="range" min="0" max="100" value="60"></div>
-    <div class="card"><label>🧪 Pupuk: </label><select id="fertilizer"><option value="none">Tidak pakai</option><option value="npk">NPK</option><option value="organic">Organik</option></select></div>
-    <div class="card"><label>⚖️ Dosis Pupuk: <span id="fertVal">50</span> %</label><input id="fertDose" type="range" min="0" max="100" value="50"></div>
-    <div class="card"><label>🍂 Musim: </label><select id="season"><option value="optimal">Optimal</option><option value="kemarau">Kemarau</option><option value="hujan">Hujan</option></select></div>
-</div>
-
-<div class="card center">
-    <button onclick="changeDay(-5)">⬅️ -5 Hari</button>
-    <button onclick="changeDay(1)">🌱 +1 Hari</button>
-    <button onclick="changeDay(5)">+5 Hari ➡️</button>
-    <button onclick="changeDay(15)">🌻 +15 Hari</button>
-</div>
-
-<div class="card center">
-    <button onclick="resetCurrentMode()">🔄 Reset Mode Ini</button>
-    <button onclick="resetPreviousMode()">📁 Reset Mode Sebelumnya</button>
-    <button onclick="resetAllModes()">⚠️ Reset Semua</button>
-</div>
-
-<div class="analysis-container">
-    <div class="analysis-box"><h3>📊 Perlakuan</h3><div id="treatmentInfo">-</div></div>
-    <div class="analysis-box"><h3>🌱 Respon Tanaman</h3><div id="plantInfo">-</div></div>
-</div>
-
-<canvas id="growthChart" width="800" height="300"></canvas>
-
-</div>
-
-<script>
-    // ========== STATE ==========
-    let modes = {
-        normal: { day: 0, height: 0, history: [0], isDead: false, deadCause: null, deathType: null, wiltLevel: 0 },
-        experiment: { day: 0, height: 0, history: [0], isDead: false, deadCause: null, deathType: null, wiltLevel: 0 }
-    };
-    let currentMode = "normal";
-    let growthChart = null;
-    
-    let env = { water:100, light:80, temp:27, ph:6.5, humidity:60, fertilizer:"npk", fertDose:50, season:"optimal" };
-    const MAX_HEIGHT = 250;
-    
-    // ========== TARGET TINGGI (SESUAI TABEL REAL) ==========
-    function getTargetHeight(day) {
-        if(day <= 5) return 0;
-        if(day <= 10) return 1 + (day-5) * 0.4;
-        if(day <= 20) return 3 + (day-10) * 1.2;
-        if(day <= 40) return 15 + (day-20) * 3.25;
-        if(day <= 60) return 80 + (day-40) * 3.5;
-        if(day <= 75) return 150 + (day-60) * 4.67;
-        if(day <= 90) return 220 + (day-75) * 2;
-        return Math.max(0, 250 - (day-90) * 3.5);
-    }
-    
-    // ========== GET FASE ==========
-    function getPhaseName(day, isDead) {
-        if(isDead) return "Mati";
-        if(day <= 5) return "Dormancy";
-        if(day <= 10) return "Germination";
-        if(day <= 20) return "Seedling";
-        if(day <= 40) return "Early Vegetative";
-        if(day <= 60) return "Late Vegetative";
-        if(day <= 75) return "Flowering";
-        if(day <= 90) return "Seed Maturation";
-        return "Senescence";
-    }
-    
-    function getStage(day, isDead) {
-        if(isDead) return 8;
-        if(day <= 5) return 1;
-        if(day <= 10) return 2;
-        if(day <= 20) return 3;
-        if(day <= 40) return 4;
-        if(day <= 60) return 5;
-        if(day <= 75) return 6;
-        if(day <= 90) return 7;
-        return 8;
-    }
-    
-    // ========== DETEKSI KEMATIAN ==========
-    function getDeathCause(state) {
-        if(state.day >= 8 && state.day <= 25 && state.height < 2 && !state.isDead) {
-            return { type:"germ_fail", cause:"🌱 GAGAL BERKECAMBAH", detail:"Biji tidak berkecambah karena kondisi lingkungan tidak mendukung." };
-        }
-        if(env.water < 35) return { type:"drought", cause:"💧 MATI KEKERINGAN", detail:`Air hanya ${env.water} mm/hari (ideal 80-120).` };
-        if(env.water > 170) return { type:"waterlog", cause:"💧 MATI GENANGAN", detail:`Air ${env.water} mm/hari. Akar membusuk.` };
-        if(env.light < 25) return { type:"dark", cause:"☀️ MATI KURANG CAHAYA", detail:`Cahaya ${env.light}%. Fotosintesis terhenti.` };
-        if(env.temp > 38) return { type:"heat", cause:"🌡️ MATI PANAS", detail:`Suhu ${env.temp}°C.` };
-        if(env.temp < 10) return { type:"cold", cause:"🌡️ MATI BEKU", detail:`Suhu ${env.temp}°C.` };
-        if(env.ph < 5.0) return { type:"ph", cause:"⚗️ MATI pH ASAM", detail:`pH ${env.ph}. Toksisitas Aluminium.` };
-        if(env.ph > 8.0) return { type:"ph", cause:"⚗️ MATI pH BASA", detail:`pH ${env.ph}. Hara tidak tersedia.` };
-        if(env.humidity < 25) return { type:"hum", cause:"💨 MATI KELEMBABAN RENDAH", detail:`Kelembaban ${env.humidity}%.` };
-        if(env.humidity > 85) return { type:"hum", cause:"💨 MATI KELEMBABAN TINGGI", detail:`Kelembaban ${env.humidity}%.` };
-        if(env.fertilizer !== "none" && env.fertDose > 85) return { type:"fert", cause:"🧪 MATI OVERDOSIS PUPUK", detail:`Dosis ${env.fertDose}%.` };
-        if(state.day > 100 && state.height < 20) return { type:"old", cause:"🍂 MATI USIA TUA", detail:"Siklus hidup selesai." };
-        return null;
-    }
-    
-    function calculateStressLevel() {
-        let stress = 0;
-        let causes = [];
-        if(env.water < 40) { stress += 35; causes.push("💧 Kekurangan air"); }
-        else if(env.water < 60) { stress += 20; causes.push("💧 Air kurang"); }
-        else if(env.water > 160) { stress += 30; causes.push("💧 Kelebihan air"); }
-        else if(env.water > 140) { stress += 15; causes.push("💧 Air berlebih"); }
-        
-        if(env.light < 30) { stress += 35; causes.push("☀️ Kurang cahaya"); }
-        else if(env.light < 50) { stress += 20; causes.push("☀️ Cahaya rendah"); }
-        else if(env.light > 95) { stress += 15; causes.push("☀️ Terik berlebih"); }
-        
-        if(env.temp > 36) { stress += 40; causes.push("🌡️ Panas ekstrim"); }
-        else if(env.temp > 33) { stress += 25; causes.push("🌡️ Terlalu panas"); }
-        else if(env.temp < 14) { stress += 35; causes.push("🌡️ Terlalu dingin"); }
-        else if(env.temp < 18) { stress += 20; causes.push("🌡️ Dingin"); }
-        
-        if(env.ph < 5.2 || env.ph > 8.2) { stress += 35; causes.push("⚗️ pH ekstrim"); }
-        else if(env.ph < 5.8 || env.ph > 7.5) { stress += 15; causes.push("⚗️ pH tidak ideal"); }
-        
-        if(env.humidity < 30) { stress += 25; causes.push("💨 Kelembaban rendah"); }
-        else if(env.humidity > 85) { stress += 20; causes.push("💨 Kelembaban tinggi"); }
-        
-        if(env.fertilizer !== "none" && env.fertDose > 80) { stress += 30; causes.push("🧪 Overdosis pupuk"); }
-        else if(env.fertilizer !== "none" && env.fertDose > 65) { stress += 15; causes.push("🧪 Pupuk berlebih"); }
-        else if(env.fertilizer === "none") { stress += 15; causes.push("🧪 Tidak pakai pupuk"); }
-        
-        if(env.season === "kemarau" && env.water < 70) { stress += 15; causes.push("🍂 Kemarau + kekeringan"); }
-        if(env.season === "hujan" && env.water > 140) { stress += 15; causes.push("🍂 Hujan + kelebihan air"); }
-        
-        return { level: Math.min(100, stress), causes: causes.slice(0, 4) };
-    }
-    
-    function updateDeathAndWilt(state) {
-        if(state.isDead) return true;
-        let death = getDeathCause(state);
-        if(death) {
-            state.isDead = true;
-            state.deadCause = death;
-            state.deathType = death.type;
-            state.wiltLevel = 100;
-            return true;
-        }
-        let stress = calculateStressLevel();
-        let currentWilt = state.wiltLevel || 0;
-        if(stress.level > 75) {
-            state.wiltLevel = Math.min(100, currentWilt + 7);
-            if(state.wiltLevel >= 92) {
-                state.isDead = true;
-                state.deadCause = { type:"stress", cause:"⚠️ STRES LINGKUNGAN PARAH", detail:stress.causes.join(", ") };
-                state.deathType = "stress";
-                state.wiltLevel = 100;
-                return true;
-            }
-        } else if(stress.level > 55) {
-            state.wiltLevel = Math.min(90, currentWilt + 4);
-        } else if(stress.level > 35) {
-            state.wiltLevel = Math.min(75, currentWilt + 2);
-        } else {
-            state.wiltLevel = Math.max(0, currentWilt - 2);
-        }
-        if(state.day > 90 && !state.isDead) {
-            state.wiltLevel = Math.min(100, state.wiltLevel + 1.5);
-            if(state.wiltLevel >= 95 || state.day > 120) {
-                state.isDead = true;
-                state.deadCause = { type:"old", cause:"🍂 MATI USIA TUA", detail:"Siklus hidup alami bunga matahari telah selesai." };
-                state.deathType = "old";
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    function getGrowthFactor(state) {
-        if(state.isDead) return 0;
-        let wf = (env.water>=70 && env.water<=130) ? 1 : (env.water<40?0.3:(env.water>160?0.45:0.7));
-        let lf = (env.light>=60 && env.light<=90) ? 1 : (env.light<35?0.3:0.7);
-        let tf = (env.temp>=20 && env.temp<=30) ? 1 : (env.temp<15?0.3:(env.temp>35?0.4:0.65));
-        let pf = (env.ph>=6 && env.ph<=7.5) ? 1 : (env.ph<5.2?0.3:(env.ph>8?0.35:0.65));
-        let hf = (env.humidity>=45 && env.humidity<=75) ? 1 : (env.humidity<30?0.4:0.7);
-        let ff = 1;
-        if(env.fertilizer==="npk") ff = 1 + (env.fertDose/100)*0.4;
-        else if(env.fertilizer==="organic") ff = 1 + (env.fertDose/100)*0.25;
-        else ff = 0.75;
-        ff = Math.min(1.2, ff);
-        let sf = env.season==="optimal"?1:(env.season==="kemarau"?0.7:0.85);
-        let minFactor = Math.min(wf,lf,tf,pf,hf);
-        let wiltPenalty = 1 - (state.wiltLevel||0)/100;
-        return Math.min(1.2, Math.max(0.1, minFactor * ff * sf * wiltPenalty));
-    }
-    
-    function dailyGrowth(state) {
-        if(state.isDead) return 0;
-        if(state.height >= MAX_HEIGHT) return 0;
-        let target = getTargetHeight(state.day+1);
-        let diff = Math.max(0, target - state.height);
-        let growth = diff * 0.32 * getGrowthFactor(state);
-        return parseFloat(Math.min(6, growth).toFixed(2));
-    }
-    
-    // ========== SIMULASI MUNDUR & MAJU DENGAN MENYIMPAN HISTORY ==========
-    function simulateToDay(targetDay) {
+    // ========== FUNGSI RE-SIMULASI DARI HARI TERTENTU ==========
+    function recalculateFromDay(targetDay) {
         let state = modes[currentMode];
         
-        // Buat history baru dari awal hingga targetDay
+        // Simulasi dari awal (hari 0) sampai targetDay
         let newHistory = [0];
         let tempHeight = 0;
         let tempIsDead = false;
@@ -496,7 +25,6 @@
             tempHeight = parseFloat((tempHeight + growth).toFixed(2));
             if(tempHeight > MAX_HEIGHT) tempHeight = MAX_HEIGHT;
             
-            // Senescence
             if(d > 90) tempHeight = Math.max(0, tempHeight - 1.5);
             
             // Update stres & layu
@@ -533,6 +61,7 @@
         return state;
     }
     
+    // ========== CHANGE DAY (TANPA HARUS RESET) ==========
     function changeDay(delta) {
         let state = modes[currentMode];
         let newDay = state.day + delta;
@@ -540,12 +69,13 @@
         if(newDay > 150) newDay = 150;
         if(newDay === state.day) return;
         
-        simulateToDay(newDay);
+        recalculateFromDay(newDay);
         updateUI();
         updateChart();
         drawSunflower();
     }
     
+    // ========== RESET FUNCTIONS (TIDAK DIUBAH) ==========
     function resetToOptimal() {
         env.water=100; env.light=80; env.temp=27; env.ph=6.5; env.humidity=60;
         env.fertilizer="npk"; env.fertDose=50; env.season="optimal";
@@ -562,7 +92,7 @@
     function resetCurrentMode() {
         modes[currentMode] = { day:0, height:0, history:[0], isDead:false, deadCause:null, deathType:null, wiltLevel:0 };
         if(currentMode === "normal") resetToOptimal();
-        simulateToDay(0);
+        recalculateFromDay(0);
         updateUI();
         updateChart();
         drawSunflower();
@@ -573,7 +103,7 @@
         let oldMode = currentMode;
         currentMode = prev;
         modes[prev] = { day:0, height:0, history:[0], isDead:false, deadCause:null, deathType:null, wiltLevel:0 };
-        simulateToDay(0);
+        recalculateFromDay(0);
         currentMode = oldMode;
         updateChart();
         if(currentMode === prev) { updateUI(); drawSunflower(); }
@@ -585,93 +115,11 @@
         resetToOptimal();
         let oldMode = currentMode;
         currentMode = "normal";
-        simulateToDay(0);
+        recalculateFromDay(0);
         currentMode = "experiment";
-        simulateToDay(0);
+        recalculateFromDay(0);
         currentMode = oldMode;
         updateUI();
         updateChart();
         drawSunflower();
     }
-    
-    // ========== CANVAS ANIMASI ==========
-    function drawSunflower() {
-        let canvas = document.getElementById("flowerCanvas");
-        let ctx = canvas.getContext("2d");
-        let w = canvas.width = 380;
-        let h = canvas.height = 280;
-        ctx.clearRect(0,0,w,h);
-        
-        let state = modes[currentMode];
-        let stage = getStage(state.day, state.isDead);
-        let isDead = state.isDead;
-        let deathType = state.deathType;
-        let heightPercent = Math.min(1, state.height / MAX_HEIGHT);
-        let stemHeight = 25 + heightPercent * 150;
-        let groundY = h-35;
-        let stemTopY = groundY - stemHeight;
-        let stemX = w/2;
-        let wilt = state.wiltLevel || 0;
-        
-        if(isDead && deathType) {
-            if(deathType==="drought") ctx.filter = "sepia(0.7) brightness(0.45) contrast(1.2)";
-            else if(deathType==="waterlog") ctx.filter = "blur(2px) brightness(0.6)";
-            else if(deathType==="dark") ctx.filter = "brightness(0.3) contrast(0.7)";
-            else if(deathType==="ph") ctx.filter = "sepia(0.6) hue-rotate(-15deg) brightness(0.55)";
-            else if(deathType==="hum") ctx.filter = "brightness(0.65) saturate(0.5)";
-            else if(deathType==="fert") ctx.filter = "sepia(0.5) contrast(1.3) brightness(0.65)";
-            else ctx.filter = "grayscale(0.5) brightness(0.7)";
-        } else ctx.filter = "none";
-        
-        ctx.fillStyle = "#8B5A2B";
-        ctx.fillRect(0, groundY-6, w, 28);
-        ctx.fillStyle = "#A0522D";
-        for(let i=0;i<12;i++) ctx.fillRect(i*38, groundY-5, 18, 5);
-        
-        if((stage===8 && state.height<5) || (isDead && state.height<3)) {
-            ctx.fillStyle = "#6B4226";
-            ctx.beginPath(); ctx.ellipse(stemX, groundY-12, 14, 7, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = "#5A3A1A";
-            ctx.font = "bold 16px Poppins";
-            ctx.fillText("💀", stemX-10, groundY-18);
-            ctx.filter = "none";
-            return;
-        }
-        
-        let tiltX = (wilt>60 || isDead) ? 4 : (wilt>30 ? 2 : 0);
-        ctx.fillStyle = (isDead || stage===8) ? "#7A5A3A" : (stage>=5 ? "#4A7A2A" : "#6B8E3A");
-        ctx.fillRect(stemX-5 + tiltX, stemTopY, 10, stemHeight);
-        
-        if(stage >= 3 && !isDead) {
-            ctx.fillStyle = (stage===8) ? "#8B6B3A" : "#5A9A2A";
-            let leafSize = 8 + (stage-3)*2;
-            ctx.beginPath(); ctx.ellipse(stemX-16 + tiltX*0.4, stemTopY+stemHeight*0.4, leafSize, leafSize*0.6, -0.7, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(stemX+14 + tiltX*0.4, stemTopY+stemHeight*0.55, leafSize, leafSize*0.6, 0.7, 0, Math.PI*2); ctx.fill();
-        }
-        
-        let headSize = 0;
-        let hasFlower = false;
-        if(stage===1) headSize = 8;
-        else if(stage===2) headSize = 12;
-        else if(stage===3) headSize = 16;
-        else if(stage===4) headSize = 22;
-        else if(stage===5) headSize = 28;
-        else if(stage===6) { headSize = 38; hasFlower = true; }
-        else if(stage===7) { headSize = 44; hasFlower = true; }
-        else headSize = 36;
-        if(isDead) headSize = Math.max(20, headSize * 0.7);
-        
-        if(hasFlower && !isDead && stage>=6) {
-            ctx.fillStyle = "#F5C542";
-            for(let a=0;a<14;a++) {
-                let ang = a * Math.PI * 2 / 14;
-                let px = stemX + Math.cos(ang) * (headSize-7);
-                let py = stemTopY - 5 + Math.sin(ang) * (headSize-7);
-                ctx.beginPath(); ctx.ellipse(px, py, 9, 5, ang, 0, Math.PI*2); ctx.fill();
-            }
-        }
-        
-        if(isDead || stage===8) ctx.fillStyle = "#8B6B3A";
-        else if(stage>=6) ctx.fillStyle = "#C88A2A";
-        else ctx.fillStyle = "#6B9A3A";
-        ctx.beginPath(); ctx.arc(stemX + tiltX*0.3, stemTopY-5, headSize*0.45,
