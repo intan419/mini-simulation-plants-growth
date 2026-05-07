@@ -1,294 +1,110 @@
-let mode="normal";
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌻 Simulator Pertumbuhan Bunga Matahari</title>
 
-let dayN=0, dayE=0;
-let dataN=[], dataE=[];
-let chart;
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 
-const el=id=>document.getElementById(id);
+<body>
+<div class="main">
 
-// SLIDER VALUE
-["water","light","temp","ph","humidity","fertDose"].forEach(id=>{
-el(id).oninput=()=>{
-el(id+"Val").innerText=el(id).value;
-};
-});
+<h1>🌻 Simulator Pertumbuhan Bunga Matahari</h1>
 
-// FASE
-const stages=[
-{day:0,img:"assets/seed.png",phase:"Dormancy"},
-{day:5,img:"assets/sprout.png",phase:"Germination"},
-{day:15,img:"assets/small.png",phase:"Seedling"},
-{day:30,img:"assets/medium.png",phase:"Vegetative"},
-{day:50,img:"assets/flower.png",phase:"Reproductive"},
-{day:70,img:"assets/bloom.png",phase:"Anthesis"},
-{day:90,img:"assets/wilt.png",phase:"Senescence"}
-];
+<div class="card center">
+Mode:
+<select id="mode">
+<option value="normal">Normal</option>
+<option value="experiment">Eksperimen</option>
+</select>
+</div>
 
-// TARGET TINGGI SESUAI DATA KAMU
-function getTargetHeight(day) {
-    if (day <= 10) return 2 + (day / 10) * 3;
-    if (day <= 20) return 5 + ((day - 10) / 10) * 15;
-    if (day <= 40) return 20 + ((day - 20) / 20) * 80;
-    if (day <= 60) return 100 + ((day - 40) / 20) * 80;
-    if (day <= 75) return 180 + ((day - 60) / 15) * 40;
-    if (day <= 90) return 220 + ((day - 75) / 15) * 30;
-    // Setelah 90 hari: turun perlahan sampai 0
-    return Math.max(0, 250 - (day - 90) * 6);
-}
+<div class="card center">
+Hari: <span id="day">0</span><br>
+Tinggi: <span id="height">0</span> cm<br>
+Fase: <span id="phase">🌰 Dormancy</span>
+</div>
 
-// MODE
-el("mode").onchange=e=>{
-mode=e.target.value;
-updateUI();
-};
+<img id="plantImg" src="assets/seed.png" alt="Tanaman">
 
-// MODEL
-function step(prev,d,mode){
+<div class="container">
 
-let H=prev?.H??0;
-let stress=prev?.stress??0;
-let deadCause = prev?.deadCause ?? null;
+<div class="card">
+<label>💧 Air: <span id="waterVal">100</span> mm/hari</label>
+<input id="water" type="range" min="0" max="200" value="100">
+</div>
 
-let w=+el("water").value;
-let l=+el("light").value;
-let t=+el("temp").value;
-let p=+el("ph").value;
-let h=+el("humidity").value;
-let fert=el("fertilizer").value;
-let dose=+el("fertDose").value/100;
-let season=el("season").value;
+<div class="card">
+<label>☀️ Cahaya: <span id="lightVal">80</span> %</label>
+<input id="light" type="range" min="0" max="100" value="80">
+</div>
 
-if(mode==="normal"){
-w=100;l=80;t=27;p=6.5;h=60;dose=0.5;
-}
+<div class="card">
+<label>🌡️ Suhu: <span id="tempVal">27</span> °C</label>
+<input id="temp" type="range" min="10" max="40" value="27">
+</div>
 
-if(season==="kemarau"){w*=0.7;h*=0.7;}
-if(season==="hujan"){w*=1.3;h*=1.2;}
+<div class="card">
+<label>🧪 pH: <span id="phVal">6.5</span></label>
+<input id="ph" type="range" min="3" max="9" step="0.1" value="6.5">
+</div>
 
-let fertEffect=1;
-if(fert==="npk") fertEffect=1+0.5*dose;
-if(fert==="organic") fertEffect=1+0.3*dose;
-if(dose>0.8) stress+=1.5;
+<div class="card">
+<label>💨 Kelembaban: <span id="humVal">60</span> %</label>
+<input id="humidity" type="range" min="0" max="100" value="60">
+</div>
 
-let f=Math.min(
-l/(l+50),
-w<80?w/80:(w>140?140/w:1),
-(t>=20&&t<=30)?1:0.5,
-(p>=6&&p<=7.5)?1:0.5,
-(h>=40&&h<=70)?1:0.7
-);
+<div class="card">
+<label>🌾 Pupuk</label>
+<select id="fertilizer">
+<option value="none">Tidak pakai</option>
+<option value="npk">NPK</option>
+<option value="organic">Organik</option>
+</select>
+</div>
 
-if(f<0.6) stress+=0.4;
-else stress*=0.8;
+<div class="card">
+<label>📊 Dosis Pupuk: <span id="fertVal">50</span> %</label>
+<input id="fertDose" type="range" min="0" max="100" value="50">
+</div>
 
-// CEK KEMATIAN KARENA STRES LINGKUNGAN
-if(stress>4) {
-    return {H, stress, dead:true, deadCause: "stres lingkungan (parameter tidak optimal)"};
-}
+<div class="card">
+<label>🍂 Musim</label>
+<select id="season">
+<option value="optimal">Optimal</option>
+<option value="kemarau">Kemarau</option>
+<option value="hujan">Hujan</option>
+</select>
+</div>
 
-// CEK KEMATIAN KARENA USIA TUA (>120 hari)
-if(d > 120 && H <= 10) {
-    return {H, stress, dead:true, deadCause: "usia tua (siklus hidup selesai)"};
-}
+</div>
 
-// Setelah fase senescence (90+ hari), tanaman mulai layu dan mati
-if(d > 90) {
-    let penurunan = (d - 90) * 2.5;
-    H = Math.max(0, H - penurunan);
-    if(H <= 0 || d > 130) {
-        return {H:0, stress, dead:true, deadCause: "usia tua (siklus hidup selesai)"};
-    }
-    return {H, stress};
-}
+<div class="card center">
+<button onclick="prevDay()">⬅️ -5 Hari</button>
+<button onclick="nextDay()">+5 Hari ➡️</button>
+<button onclick="resetAll()">🔄 Reset Semua</button>
+</div>
 
-// Pertumbuhan normal menuju target
-let target = getTargetHeight(d);
-let diff = Math.max(0, target - H);
-let growth = diff * 0.35 * f * fertEffect;
+<div class="analysis-container">
+<div class="analysis-box">
+<h3>📊 Perlakuan</h3>
+<div id="treatmentInfo"></div>
+</div>
 
-H += growth;
-if(H<0) H=0;
+<div class="analysis-box">
+<h3>🌱 Respon Tanaman</h3>
+<div id="plantInfo"></div>
+</div>
+</div>
 
-return {H, stress};
-}
+<canvas id="chart" width="800" height="400"></canvas>
 
-// SIMULASI
-function simulate(day,mode){
-let arr=[],prev=null;
-for(let d=5;d<=day;d+=5){
-let res=step(prev,d,mode);
-arr.push(res);
-if(res.dead) break;
-prev=res;
-}
-return arr;
-}
+</div>
 
-// NAV
-function nextDay(){
-if(mode==="normal"){dayN=Math.min(dayN+5,150);dataN=simulate(dayN,"normal");}
-else{dayE=Math.min(dayE+5,150);dataE=simulate(dayE,"experiment");}
-updateUI();
-}
-
-function prevDay(){
-if(mode==="normal"&&dayN>=5){dayN-=5;dataN=simulate(dayN,"normal");}
-if(mode==="experiment"&&dayE>=5){dayE-=5;dataE=simulate(dayE,"experiment");}
-updateUI();
-}
-
-// IMAGE
-function updateImage(day,dead,deadCause){
-if(dead){
-el("plantImg").src="assets/wilt.png";
-if(deadCause && deadCause.includes("stres")){
-el("phase").innerText="💀 Mati (Stres Lingkungan)";
-} else {
-el("phase").innerText="💀 Mati (Usia Tua)";
-}
-return;
-}
-let current=stages[0];
-for(let s of stages){if(day>=s.day) current=s;}
-el("planetImg").src=current.img;
-el("phase").innerText=current.phase;
-}
-
-// ANALISIS
-function treatmentAnalysis(){
-if(mode==="normal"){
-return "Mode Normal: Air 100, Cahaya 80%, Suhu 27°C, pH 6.5, Kelembaban 60%, Pupuk 50%";
-}
-let w=+el("water").value;
-let l=+el("light").value;
-let t=+el("temp").value;
-let p=+el("ph").value;
-let h=+el("humidity").value;
-let dose=+el("fertDose").value;
-
-return `
-Air ${w} (80–120)<br>
-Cahaya ${l}% (70–90)<br>
-Suhu ${t}°C (22–30)<br>
-pH ${p} (6–7.5)<br>
-Kelembaban ${h}% (40–70)<br>
-Pupuk ${dose}% (40–70)
-`;
-}
-
-function plantResponse(res,mode){
-if(mode==="normal") return "🌿 Tumbuh optimal sesuai target realistik.";
-if(res?.dead){
-if(res.deadCause && res.deadCause.includes("stres")){
-return `💀 Tanaman mati karena ${res.deadCause}. Tinggi akhir: ${res.H.toFixed(1)} cm`;
-} else {
-return `💀 Tanaman mati karena ${res.deadCause || "usia tua"}. Tinggi akhir: ${res.H.toFixed(1)} cm`;
-}
-}
-if(res?.stress>2) return `⚠️ Tanaman stres (${res.stress.toFixed(1)}/4) - pertumbuhan terhambat.`;
-return "🌱 Tumbuh normal.";
-}
-
-// UI
-function updateUI(){
-let d = mode==="normal"?dayN:dayE;
-let currentArr = mode==="normal"?dataN:dataE;
-let current = currentArr.length ? currentArr[currentArr.length-1] : {H:0};
-
-el("day").innerText=d;
-el("height").innerText=current.H.toFixed(1);
-
-// Update image dan phase dengan info kematian
-let deadCause = current.deadCause || null;
-if(current.dead){
-el("plantImg").src="assets/wilt.png";
-if(deadCause && deadCause.includes("stres")){
-el("phase").innerHTML="💀 Mati (Stres Lingkungan)";
-} else if(deadCause && deadCause.includes("usia")){
-el("phase").innerHTML="💀 Mati (Usia Tua)";
-} else {
-el("phase").innerHTML="💀 Mati";
-}
-} else {
-let currentStage=stages[0];
-for(let s of stages){if(d>=s.day) currentStage=s;}
-el("plantImg").src=currentStage.img;
-el("phase").innerHTML=currentStage.phase;
-}
-
-el("treatmentInfo").innerHTML=treatmentAnalysis();
-el("plantInfo").innerHTML=plantResponse(current,mode);
-
-drawChart();
-}
-
-// CHART
-function drawChart(){
-let maxLen = Math.max(dataN.length, dataE.length);
-let labels = [];
-for(let i=0; i<maxLen; i++) labels.push((i+1)*5);
-
-if(!chart){
-chart=new Chart(el("chart"),{
-type:"line",
-data:{
-labels:labels,
-datasets:[
-{label:"Normal",data:dataN.map(d=>d.H),borderColor:"green",fill:false,tension:0.3},
-{label:"Eksperimen",data:dataE.map(d=>d.H),borderColor:"red",fill:false,tension:0.3}
-]
-},
-options:{
-responsive:true,
-scales:{
-y:{
-title:{display:true,text:"Tinggi (cm)"},
-min:0,
-max:280
-}
-},
-plugins:{
-tooltip:{
-callbacks:{
-label:function(context){
-let label = context.dataset.label || '';
-let value = context.raw;
-let dataPoint = context.dataset.label === "Normal" ? dataN[context.dataIndex] : dataE[context.dataIndex];
-if(dataPoint?.dead){
-return `${label}: ${value.toFixed(1)} cm (MATI)`;
-}
-return `${label}: ${value.toFixed(1)} cm`;
-}
-}
-}
-}
-}
-});
-} else {
-chart.data.labels=labels;
-chart.data.datasets[0].data=dataN.map(d=>d.H);
-chart.data.datasets[1].data=dataE.map(d=>d.H);
-chart.update();
-}
-}
-
-// RESET
-function resetMode(){
-if(mode==="normal"){dayN=0;dataN=[];}
-else{dayE=0;dataE=[];}
-updateUI();
-}
-
-function resetPrevMode(){
-if(mode==="normal"){dayE=0;dataE=[];}
-else{dayN=0;dataN=[];}
-updateUI();
-}
-
-function resetAll(){
-dayN=0;dayE=0;
-dataN=[];dataE=[];
-updateUI();
-}
-
-updateUI();
+<script src="script.js"></script>
+</body>
+</html>
