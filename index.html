@@ -2,7 +2,6 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🌻 Simulator Pertumbuhan Bunga Matahari</title>
 
 <link rel="stylesheet" href="style.css">
@@ -26,10 +25,10 @@ Mode:
 <div class="card center">
 Hari: <span id="day">0</span><br>
 Tinggi: <span id="height">0</span> cm<br>
-Fase: <span id="phase">🌰 Dormancy</span>
+Fase: <span id="phase">Dormancy</span>
 </div>
 
-<!-- ANIMASI TANAMAN -->
+<!-- ANIMASI TANAMAN (TAMBAHAN) -->
 <div id="plantAnimation" class="plant-animation">
     <div class="plant-container">
         <div class="ground"></div>
@@ -37,35 +36,38 @@ Fase: <span id="phase">🌰 Dormancy</span>
     </div>
 </div>
 
+<!-- GAMBAR TETAP ADA (untuk backup) -->
+<img id="plantImg" src="assets/seed.png" style="display:none;">
+
 <div class="container">
 
 <div class="card">
-<label>💧 Air: <span id="waterVal">100</span> mm/hari</label>
+<label>Air: <span id="waterVal">100</span> mm/hari</label>
 <input id="water" type="range" min="0" max="200" value="100">
 </div>
 
 <div class="card">
-<label>☀️ Cahaya: <span id="lightVal">80</span> %</label>
+<label>Cahaya: <span id="lightVal">80</span> %</label>
 <input id="light" type="range" min="0" max="100" value="80">
 </div>
 
 <div class="card">
-<label>🌡️ Suhu: <span id="tempVal">27</span> °C</label>
+<label>Suhu: <span id="tempVal">27</span> °C</label>
 <input id="temp" type="range" min="10" max="40" value="27">
 </div>
 
 <div class="card">
-<label>🧪 pH: <span id="phVal">6.5</span></label>
+<label>pH: <span id="phVal">6.5</span></label>
 <input id="ph" type="range" min="3" max="9" step="0.1" value="6.5">
 </div>
 
 <div class="card">
-<label>💨 Kelembaban: <span id="humVal">60</span> %</label>
+<label>Kelembaban: <span id="humVal">60</span> %</label>
 <input id="humidity" type="range" min="0" max="100" value="60">
 </div>
 
 <div class="card">
-<label>🌾 Pupuk</label>
+<label>Pupuk</label>
 <select id="fertilizer">
 <option value="none">Tidak pakai</option>
 <option value="npk">NPK</option>
@@ -74,12 +76,12 @@ Fase: <span id="phase">🌰 Dormancy</span>
 </div>
 
 <div class="card">
-<label>📊 Dosis Pupuk: <span id="fertVal">50</span> %</label>
+<label>Dosis Pupuk: <span id="fertVal">50</span> %</label>
 <input id="fertDose" type="range" min="0" max="100" value="50">
 </div>
 
 <div class="card">
-<label>🍂 Musim</label>
+<label>Musim</label>
 <select id="season">
 <option value="optimal">Optimal</option>
 <option value="kemarau">Kemarau</option>
@@ -92,9 +94,12 @@ Fase: <span id="phase">🌰 Dormancy</span>
 <div class="card center">
 <button onclick="prevDay()">⬅️ -5 Hari</button>
 <button onclick="nextDay()">+5 Hari ➡️</button>
-<button onclick="resetAll()">🔄 Reset Semua</button>
+</div>
+
+<div class="card center">
 <button onclick="resetMode()">Reset Mode Ini</button>
 <button onclick="resetPrevMode()">Reset Mode Sebelumnya</button>
+<button onclick="resetAll()">Reset Semua</button>
 </div>
 
 <div class="analysis-container">
@@ -109,7 +114,7 @@ Fase: <span id="phase">🌰 Dormancy</span>
 </div>
 </div>
 
-<canvas id="chart" width="800" height="400"></canvas>
+<canvas id="chart"></canvas>
 
 </div>
 
