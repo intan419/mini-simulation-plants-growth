@@ -29,7 +29,13 @@ Tinggi: <span id="height">0</span> cm<br>
 Fase: <span id="phase">🌰 Dormancy</span>
 </div>
 
-<img id="plantImg" src="assets/seed.png" alt="Tanaman">
+<!-- ANIMASI TANAMAN -->
+<div id="plantAnimation" class="plant-animation">
+    <div class="plant-container">
+        <div class="ground"></div>
+        <div id="animatedPlant" class="plant">🌰</div>
+    </div>
+</div>
 
 <div class="container">
 
@@ -87,6 +93,8 @@ Fase: <span id="phase">🌰 Dormancy</span>
 <button onclick="prevDay()">⬅️ -5 Hari</button>
 <button onclick="nextDay()">+5 Hari ➡️</button>
 <button onclick="resetAll()">🔄 Reset Semua</button>
+<button onclick="resetMode()">Reset Mode Ini</button>
+<button onclick="resetPrevMode()">Reset Mode Sebelumnya</button>
 </div>
 
 <div class="analysis-container">
