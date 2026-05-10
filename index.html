@@ -2,435 +2,112 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>🌻 Simulator Bunga Matahari</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #d9f99d, #fef08a);
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        .box {
-            max-width: 1100px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 30px;
-            padding: 20px;
-        }
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 15px;
-            margin: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .flex {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
-        button {
-            background: #22c55e;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 30px;
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:active {
-            transform: scale(0.98);
-        }
-        .plant-area {
-            text-align: center;
-            font-size: 100px;
-            padding: 20px;
-            background: linear-gradient(180deg, #87CEEB, #90EE90);
-            border-radius: 30px;
-            margin: 10px;
-        }
-        input, select {
-            padding: 5px;
-            margin-top: 5px;
-            width: 100%;
-        }
-        .info {
-            background: white;
-            border-radius: 16px;
-            padding: 15px;
-            margin: 10px;
-            min-width: 250px;
-            text-align: center;
-        }
-        h1 {
-            text-align: center;
-            color: #14532d;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌻 Simulator Pertumbuhan Bunga Matahari</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+    <div class="app-container">
+        <h1>🌻 SIMULATOR PERTUMBUHAN BUNGA MATAHARI</h1>
 
-<div class="box">
-    <h1>🌻 SIMULATOR PERTUMBUHAN BUNGA MATAHARI</h1>
-
-    <!-- Mode -->
-    <div class="flex">
-        <div class="card">
-            <label>🎮 Mode:</label>
+        <!-- Mode Selector -->
+        <div class="mode-card">
+            <span class="mode-label">🎮 MODE:</span>
             <select id="modeSelect">
-                <option value="normal">🌿 Normal (Optimal)</option>
-                <option value="experiment">🧪 Eksperimen</option>
+                <option value="normal">🌿 NORMAL (Optimal)</option>
+                <option value="experiment">🧪 EKSPERIMEN</option>
             </select>
         </div>
-        <div class="card">
-            📅 Hari: <strong id="dayNum">0</strong><br>
-            📏 Tinggi: <strong id="heightNum">0</strong> cm<br>
-            🌱 Fase: <strong id="phaseText">Biji</strong>
+
+        <!-- Info & Animasi -->
+        <div class="info-animation">
+            <div class="info-card">
+                <div>📅 HARI: <strong id="dayDisplay">0</strong></div>
+                <div>📏 TINGGI: <strong id="heightDisplay">0</strong> cm</div>
+                <div>🌱 FASE: <strong id="phaseDisplay">🌰 Biji</strong></div>
+            </div>
+            <div class="animation-card" id="animationCard">
+                <div class="sky"></div>
+                <div class="ground"></div>
+                <div class="plant-holder">
+                    <div id="plantEmoji" class="plant-emoji">🌰</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slider Controls -->
+        <div class="sliders-grid" id="slidersGrid">
+            <div class="slider-card">
+                <label>💧 AIR: <span id="waterVal">100</span> mm/hari</label>
+                <input type="range" id="water" min="0" max="200" value="100" step="5">
+            </div>
+            <div class="slider-card">
+                <label>☀️ CAHAYA: <span id="lightVal">80</span> %</label>
+                <input type="range" id="light" min="0" max="100" value="80">
+            </div>
+            <div class="slider-card">
+                <label>🌡️ SUHU: <span id="tempVal">27</span> °C</label>
+                <input type="range" id="temp" min="10" max="40" value="27">
+            </div>
+            <div class="slider-card">
+                <label>🧪 pH TANAH: <span id="phVal">6.5</span></label>
+                <input type="range" id="ph" min="3" max="9" step="0.1" value="6.5">
+            </div>
+            <div class="slider-card">
+                <label>💨 KELEMBABAN: <span id="humVal">60</span> %</label>
+                <input type="range" id="humidity" min="0" max="100" value="60">
+            </div>
+            <div class="slider-card">
+                <label>🌾 PUPUK:</label>
+                <select id="fertilizer">
+                    <option value="none">❌ Tidak pakai</option>
+                    <option value="npk" selected>✅ NPK</option>
+                    <option value="organic">🌿 Organik</option>
+                </select>
+            </div>
+            <div class="slider-card">
+                <label>📊 DOSIS PUPUK: <span id="fertVal">50</span> %</label>
+                <input type="range" id="fertDose" min="0" max="100" value="50">
+            </div>
+            <div class="slider-card">
+                <label>🍂 MUSIM:</label>
+                <select id="season">
+                    <option value="optimal">🌸 Optimal</option>
+                    <option value="kemarau">☀️ Kemarau</option>
+                    <option value="hujan">🌧️ Hujan</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Tombol Navigasi -->
+        <div class="button-group">
+            <button id="prevBtn">◀ -5 HARI</button>
+            <button id="nextBtn">+5 HARI ▶</button>
+            <button id="resetCurrentBtn">🔄 RESET MODE INI</button>
+            <button id="resetOtherBtn">🔁 RESET MODE LAIN</button>
+            <button id="resetAllBtn">🗑️ RESET SEMUA</button>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <div class="info-box">
+                <h3>📊 PERLAKUAN</h3>
+                <div id="treatmentInfo">Mode Normal: Parameter optimal</div>
+            </div>
+            <div class="info-box">
+                <h3>🌱 RESPON TANAMAN</h3>
+                <div id="plantInfo">Siap tumbuh 🌱</div>
+            </div>
+        </div>
+
+        <!-- Grafik -->
+        <div class="chart-container">
+            <canvas id="growthChart"></canvas>
         </div>
     </div>
 
-    <!-- Animasi Tanaman -->
-    <div class="plant-area" id="plantEmojiArea">
-        🌰
-    </div>
-
-    <!-- Slider -->
-    <div class="flex" id="sliderArea">
-        <div class="card" style="width:180px">
-            💧 Air: <span id="waterVal">100</span><br>
-            <input type="range" id="water" min="0" max="200" value="100">
-        </div>
-        <div class="card" style="width:180px">
-            ☀️ Cahaya: <span id="lightVal">80</span><br>
-            <input type="range" id="light" min="0" max="100" value="80">
-        </div>
-        <div class="card" style="width:180px">
-            🌡️ Suhu: <span id="tempVal">27</span><br>
-            <input type="range" id="temp" min="10" max="40" value="27">
-        </div>
-        <div class="card" style="width:180px">
-            🧪 pH: <span id="phVal">6.5</span><br>
-            <input type="range" id="ph" min="3" max="9" step="0.1" value="6.5">
-        </div>
-        <div class="card" style="width:180px">
-            💨 Kelembaban: <span id="humVal">60</span><br>
-            <input type="range" id="humidity" min="0" max="100" value="60">
-        </div>
-        <div class="card" style="width:180px">
-            🌾 Pupuk:<br>
-            <select id="fertilizer">
-                <option value="none">Tidak pakai</option>
-                <option value="npk" selected>NPK</option>
-                <option value="organic">Organik</option>
-            </select>
-        </div>
-        <div class="card" style="width:180px">
-            📊 Dosis: <span id="fertVal">50</span><br>
-            <input type="range" id="fertDose" min="0" max="100" value="50">
-        </div>
-        <div class="card" style="width:180px">
-            🍂 Musim:<br>
-            <select id="season">
-                <option value="optimal">Optimal</option>
-                <option value="kemarau">Kemarau</option>
-                <option value="hujan">Hujan</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Tombol -->
-    <div class="flex">
-        <button id="btnPrev">◀ -5 HARI</button>
-        <button id="btnNext">+5 HARI ▶</button>
-        <button id="btnResetMode">🔄 RESET MODE INI</button>
-        <button id="btnResetPrev">🔁 RESET MODE LAIN</button>
-        <button id="btnResetAll">🗑️ RESET SEMUA</button>
-    </div>
-
-    <!-- Info -->
-    <div class="flex">
-        <div class="info">
-            <strong>📊 PERLAKUAN</strong><br>
-            <div id="treatmentInfo">Mode Normal: optimal</div>
-        </div>
-        <div class="info">
-            <strong>🌱 RESPON TANAMAN</strong><br>
-            <div id="plantInfo">Siap tumbuh</div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // ========== DATA ==========
-    let mode = "normal";
-    let dayNormal = 0, dayExp = 0;
-    let dataNormal = [], dataExp = [];
-
-    // Fase tanaman
-    const phases = [
-        { day: 0, emoji: "🌰", name: "Biji" },
-        { day: 5, emoji: "🌱", name: "Kecambah" },
-        { day: 15, emoji: "🌿", name: "Bibit" },
-        { day: 30, emoji: "🍃", name: "Vegetatif" },
-        { day: 50, emoji: "🌻", name: "Kuncup" },
-        { day: 70, emoji: "🌸", name: "Mekar" },
-        { day: 90, emoji: "🍂", name: "Menua" }
-    ];
-
-    // Target tinggi (cm)
-    function getTargetHeight(day) {
-        if (day <= 0) return 0;
-        if (day <= 10) return 2 + (day/10)*3;
-        if (day <= 20) return 5 + ((day-10)/10)*15;
-        if (day <= 40) return 20 + ((day-20)/20)*80;
-        if (day <= 60) return 100 + ((day-40)/20)*80;
-        if (day <= 75) return 180 + ((day-60)/15)*40;
-        if (day <= 90) return 220 + ((day-75)/15)*30;
-        return Math.max(0, 250 - (day-90)*5);
-    }
-
-    // Step pertumbuhan
-    function growthStep(prev, day, currentMode) {
-        let height = prev?.height ?? 0;
-        let stress = prev?.stress ?? 0;
-        
-        if (prev?.dead) {
-            let shrink = Math.max(0, height - 3);
-            return { height: shrink, stress, dead: true, deadReason: prev.deadReason };
-        }
-
-        let water = parseFloat(document.getElementById("water").value);
-        let light = parseFloat(document.getElementById("light").value);
-        let temp = parseFloat(document.getElementById("temp").value);
-        let ph = parseFloat(document.getElementById("ph").value);
-        let humidity = parseFloat(document.getElementById("humidity").value);
-        let fertilizer = document.getElementById("fertilizer").value;
-        let dose = parseFloat(document.getElementById("fertDose").value) / 100;
-        let season = document.getElementById("season").value;
-
-        if (currentMode === "normal") {
-            water = 100; light = 80; temp = 27; ph = 6.5; humidity = 60; dose = 0.5; fertilizer = "npk";
-        }
-
-        if (season === "kemarau") { water *= 0.7; humidity *= 0.7; }
-        if (season === "hujan") { water *= 1.3; humidity *= 1.2; }
-
-        let fertEffect = 1;
-        if (fertilizer === "npk") fertEffect = 1 + 0.5 * dose;
-        if (fertilizer === "organic") fertEffect = 1 + 0.3 * dose;
-        if (dose > 0.85) stress += 1.2;
-
-        let env = Math.min(
-            light / (light + 45),
-            water < 75 ? water/75 : (water > 135 ? 135/water : 1),
-            (temp>=20 && temp<=30) ? 1 : (temp<20 ? 0.4 : 0.5),
-            (ph>=6 && ph<=7.5) ? 1 : 0.5,
-            (humidity>=40 && humidity<=70) ? 1 : 0.6
-        );
-
-        if (env < 0.55) stress += 0.45;
-        else if (env > 0.85) stress = Math.max(0, stress - 0.2);
-        else stress = Math.max(0, stress - 0.05);
-
-        // Cek mati karena stres
-        if (stress > 4.2) {
-            let cause = "Stres lingkungan";
-            if (water < 55) cause = "Kekeringan 💧";
-            else if (water > 160) cause = "Kebanjiran 💧";
-            else if (light < 40) cause = "Kurang cahaya ☀️";
-            else if (light > 95) cause = "Terlalu terik ☀️";
-            else if (temp < 16) cause = "Suhu terlalu dingin 🌡️";
-            else if (temp > 36) cause = "Suhu terlalu panas 🌡️";
-            else if (ph < 4.5) cause = "Tanah terlalu asam 🧪";
-            else if (ph > 8.2) cause = "Tanah terlalu basa 🧪";
-            return { height, stress, dead: true, deadReason: cause };
-        }
-
-        // Penuaan >90 hari
-        if (day > 90) {
-            let decline = (day - 90) * 2.6;
-            height = Math.max(0, height - decline);
-            if (height < 1 || day > 135) {
-                return { height: 0, stress, dead: true, deadReason: "Usia tua (selesai)" };
-            }
-            return { height, stress };
-        }
-
-        let target = getTargetHeight(day);
-        let diff = Math.max(0, target - height);
-        let growth = diff * 0.38 * env * fertEffect;
-        let newHeight = Math.min(265, Math.max(0, height + growth));
-        return { height: newHeight, stress };
-    }
-
-    function runSimulation(maxDay, currentMode) {
-        let results = [], prev = null;
-        for (let d = 5; d <= maxDay; d += 5) {
-            let step = growthStep(prev, d, currentMode);
-            results.push(step);
-            if (step.dead) break;
-            prev = step;
-        }
-        return results;
-    }
-
-    // Update tampilan
-    function updateUI() {
-        let currentDay = (mode === "normal") ? dayNormal : dayExp;
-        let currentData = (mode === "normal") ? dataNormal : dataExp;
-        let latest = currentData.length ? currentData[currentData.length-1] : { height: 0, stress: 0, dead: false };
-
-        document.getElementById("dayNum").innerText = currentDay;
-        document.getElementById("heightNum").innerText = latest.height.toFixed(1);
-
-        // Update animasi tanaman
-        let plantArea = document.getElementById("plantEmojiArea");
-        if (latest.dead) {
-            plantArea.innerHTML = "💀";
-            plantArea.style.fontSize = "80px";
-        } else {
-            let currentPhase = phases[0];
-            for (let p of phases) if (currentDay >= p.day) currentPhase = p;
-            plantArea.innerHTML = currentPhase.emoji;
-            let size = 80;
-            if (latest.height > 80) size = 80 + Math.min(40, latest.height/10);
-            plantArea.style.fontSize = size + "px";
-            document.getElementById("phaseText").innerHTML = currentPhase.name;
-        }
-
-        if (latest.dead) {
-            document.getElementById("phaseText").innerHTML = "💀 Mati";
-        }
-
-        // Treatment info
-        if (mode === "normal") {
-            document.getElementById("treatmentInfo").innerHTML = "🌿 Mode Normal: Air 100, Cahaya 80%, Suhu 27°C, pH 6.5, Kelembaban 60%, Pupuk NPK 50%";
-        } else {
-            document.getElementById("treatmentInfo").innerHTML = `💧 Air: ${document.getElementById("water").value} | ☀️ Cahaya: ${document.getElementById("light").value}% | 🌡️ Suhu: ${document.getElementById("temp").value}°C | 🧪 pH: ${document.getElementById("ph").value} | 💨 Kelembaban: ${document.getElementById("humidity").value}% | 🌾 Pupuk: ${document.getElementById("fertDose").value}%`;
-        }
-
-        // Plant response
-        let target = getTargetHeight(currentDay);
-        let persen = target > 0 ? ((latest.height/target)*100).toFixed(0) : 0;
-        if (mode === "normal") {
-            document.getElementById("plantInfo").innerHTML = `🌱 Tumbuh optimal<br>📏 Target: ${target.toFixed(1)} cm → Aktual: ${latest.height.toFixed(1)} cm (${persen}%)`;
-        } else if (latest.dead) {
-            document.getElementById("plantInfo").innerHTML = `💀 Mati: ${latest.deadReason || "stres"}<br>📏 Tinggi akhir: ${latest.height.toFixed(1)} cm`;
-        } else {
-            document.getElementById("plantInfo").innerHTML = `📏 Target: ${target.toFixed(1)} cm → ${latest.height.toFixed(1)} cm (${persen}%)<br>${latest.stress > 2 ? "⚠️ Tanaman stres" : "✅ Tanaman sehat"}`;
-        }
-    }
-
-    // ========== FUNGSI TOMBOL ==========
-    function nextDay() {
-        if (mode === "normal") {
-            dayNormal = Math.min(dayNormal + 5, 150);
-            dataNormal = runSimulation(dayNormal, "normal");
-        } else {
-            dayExp = Math.min(dayExp + 5, 150);
-            dataExp = runSimulation(dayExp, "experiment");
-        }
-        updateUI();
-        console.log("nextDay dijalankan, hari:", mode === "normal" ? dayNormal : dayExp);
-    }
-
-    function prevDay() {
-        if (mode === "normal" && dayNormal >= 5) {
-            dayNormal -= 5;
-            dataNormal = runSimulation(dayNormal, "normal");
-        }
-        if (mode === "experiment" && dayExp >= 5) {
-            dayExp -= 5;
-            dataExp = runSimulation(dayExp, "experiment");
-        }
-        updateUI();
-        console.log("prevDay dijalankan");
-    }
-
-    function resetMode() {
-        if (mode === "normal") {
-            dayNormal = 0;
-            dataNormal = [];
-        } else {
-            dayExp = 0;
-            dataExp = [];
-        }
-        updateUI();
-        console.log("resetMode dijalankan");
-    }
-
-    function resetPrev() {
-        if (mode === "normal") {
-            dayExp = 0;
-            dataExp = [];
-        } else {
-            dayNormal = 0;
-            dataNormal = [];
-        }
-        updateUI();
-        console.log("resetPrev dijalankan");
-    }
-
-    function resetAll() {
-        dayNormal = 0;
-        dayExp = 0;
-        dataNormal = [];
-        dataExp = [];
-        updateUI();
-        console.log("resetAll dijalankan");
-    }
-
-    // ========== PASANG TOMBOL ==========
-    document.getElementById("btnPrev").onclick = prevDay;
-    document.getElementById("btnNext").onclick = nextDay;
-    document.getElementById("btnResetMode").onclick = resetMode;
-    document.getElementById("btnResetPrev").onclick = resetPrev;
-    document.getElementById("btnResetAll").onclick = resetAll;
-
-    document.getElementById("modeSelect").onchange = (e) => {
-        mode = e.target.value;
-        updateUI();
-    };
-
-    // Slider update untuk mode experiment
-    let sliders = ["water", "light", "temp", "ph", "humidity", "fertDose"];
-    sliders.forEach(id => {
-        document.getElementById(id).oninput = () => {
-            document.getElementById(id + "Val").innerText = document.getElementById(id).value;
-            if (mode === "experiment") {
-                dayExp = Math.min(dayExp, 150);
-                dataExp = runSimulation(dayExp, "experiment");
-                updateUI();
-            }
-        };
-    });
-
-    document.getElementById("fertilizer").onchange = () => {
-        if (mode === "experiment") {
-            dataExp = runSimulation(dayExp, "experiment");
-            updateUI();
-        }
-    };
-    document.getElementById("season").onchange = () => {
-        if (mode === "experiment") {
-            dataExp = runSimulation(dayExp, "experiment");
-            updateUI();
-        }
-    };
-
-    // Inisialisasi
-    updateUI();
-    console.log("Script berjalan!");
-</script>
-
+    <script src="script.js"></script>
 </body>
 </html>
