@@ -7,7 +7,19 @@ let growthChart = null;
 // DOM Elements
 const get = (id) => document.getElementById(id);
 
-// Fase tanaman (berdasarkan hari)
+// Nilai optimal untuk mode normal
+const OPTIMAL_VALUES = {
+    water: 100,
+    light: 80,
+    temp: 27,
+    ph: 6.5,
+    humidity: 60,
+    fertDose: 50,
+    fertilizer: "npk",
+    season: "optimal"
+};
+
+// Fase tanaman
 const growthPhases = [
     { day: 0, emoji: "🌰", name: "Biji", size: 55 },
     { day: 5, emoji: "🌱", name: "Kecambah", size: 60 },
@@ -18,16 +30,35 @@ const growthPhases = [
     { day: 90, emoji: "🍂", name: "Menua", size: 80 }
 ];
 
-// ========== TARGET TINGGI DUNIA NYATA (cm) ==========
+// ========== TARGET TINGGI DUNIA NYATA ==========
 function getRealTargetHeight(day) {
     if (day <= 0) return 0;
-    if (day <= 10) return 2 + (day / 10) * 3;           // 2-5 cm
-    if (day <= 20) return 5 + ((day - 10) / 10) * 15;   // 5-20 cm
-    if (day <= 40) return 20 + ((day - 20) / 20) * 80;  // 20-100 cm
-    if (day <= 60) return 100 + ((day - 40) / 20) * 80; // 100-180 cm
-    if (day <= 75) return 180 + ((day - 60) / 15) * 40; // 180-220 cm
-    if (day <= 90) return 220 + ((day - 75) / 15) * 30; // 220-250 cm
-    return Math.max(0, 250 - (day - 90) * 4.5);         // Stagnan lalu turun
+    if (day <= 10) return 2 + (day / 10) * 3;
+    if (day <= 20) return 5 + ((day - 10) / 10) * 15;
+    if (day <= 40) return 20 + ((day - 20) / 20) * 80;
+    if (day <= 60) return 100 + ((day - 40) / 20) * 80;
+    if (day <= 75) return 180 + ((day - 60) / 15) * 40;
+    if (day <= 90) return 220 + ((day - 75) / 15) * 30;
+    return Math.max(0, 250 - (day - 90) * 4.5);
+}
+
+// ========== RESET SLIDER KE NILAI OPTIMAL ==========
+function resetSlidersToOptimal() {
+    get("water").value = OPTIMAL_VALUES.water;
+    get("light").value = OPTIMAL_VALUES.light;
+    get("temp").value = OPTIMAL_VALUES.temp;
+    get("ph").value = OPTIMAL_VALUES.ph;
+    get("humidity").value = OPTIMAL_VALUES.humidity;
+    get("fertDose").value = OPTIMAL_VALUES.fertDose;
+    get("fertilizer").value = OPTIMAL_VALUES.fertilizer;
+    get("season").value = OPTIMAL_VALUES.season;
+    
+    get("waterVal").innerText = OPTIMAL_VALUES.water;
+    get("lightVal").innerText = OPTIMAL_VALUES.light;
+    get("tempVal").innerText = OPTIMAL_VALUES.temp;
+    get("phVal").innerText = OPTIMAL_VALUES.ph;
+    get("humVal").innerText = OPTIMAL_VALUES.humidity;
+    get("fertVal").innerText = OPTIMAL_VALUES.fertDose;
 }
 
 // ========== ANIMASI TANAMAN ==========
@@ -45,7 +76,6 @@ function updatePlantAnimation(day, isDead, stressLevel, currentHeight) {
         return;
     }
     
-    // Cari fase berdasarkan hari
     let currentPhase = growthPhases[0];
     for (let p of growthPhases) {
         if (day >= p.day) currentPhase = p;
@@ -53,12 +83,10 @@ function updatePlantAnimation(day, isDead, stressLevel, currentHeight) {
     
     plantDiv.innerHTML = currentPhase.emoji;
     
-    // Ukuran berdasarkan tinggi tanaman
     let sizeBonus = Math.min(30, Math.max(0, currentHeight / 8));
     let finalSize = currentPhase.size + sizeBonus;
     plantDiv.style.fontSize = finalSize + "px";
     
-    // Efek stres (goyang lebih cepat jika stres)
     if (stressLevel > 2) {
         plantDiv.style.animation = "sway 0.5s infinite ease-in-out";
         plantDiv.style.filter = "drop-shadow(0 0 8px rgba(255,0,0,0.6))";
@@ -67,7 +95,6 @@ function updatePlantAnimation(day, isDead, stressLevel, currentHeight) {
         plantDiv.style.filter = "drop-shadow(0 8px 12px rgba(0,0,0,0.2))";
     }
     
-    // Efek tumbuh
     plantDiv.classList.add("grow-effect");
     setTimeout(() => plantDiv.classList.remove("grow-effect"), 400);
 }
@@ -77,13 +104,11 @@ function growthStep(previous, currentDay, mode) {
     let height = previous?.height ?? 0;
     let stress = previous?.stress ?? 0;
     
-    // Jika sudah mati, terus layu
     if (previous?.dead) {
         let newHeight = Math.max(0, height - 3.5);
         return { height: newHeight, stress, dead: true, deadReason: previous.deadReason };
     }
     
-    // Ambil nilai slider
     let water = parseFloat(get("water").value);
     let light = parseFloat(get("light").value);
     let temp = parseFloat(get("temp").value);
@@ -93,39 +118,39 @@ function growthStep(previous, currentDay, mode) {
     let dose = parseFloat(get("fertDose").value) / 100;
     let season = get("season").value;
     
-    // Mode Normal: parameter optimal
     if (mode === "normal") {
-        water = 100; light = 80; temp = 27; ph = 6.5; humidity = 60; dose = 0.5; fertilizer = "npk";
+        water = OPTIMAL_VALUES.water;
+        light = OPTIMAL_VALUES.light;
+        temp = OPTIMAL_VALUES.temp;
+        ph = OPTIMAL_VALUES.ph;
+        humidity = OPTIMAL_VALUES.humidity;
+        dose = OPTIMAL_VALUES.fertDose / 100;
+        fertilizer = OPTIMAL_VALUES.fertilizer;
+        season = OPTIMAL_VALUES.season;
     }
     
-    // Efek musim
     if (season === "kemarau") { water *= 0.65; humidity *= 0.65; }
     if (season === "hujan") { water *= 1.25; humidity *= 1.2; }
     
-    // Efek pupuk
     let fertEffect = 1.0;
     if (fertilizer === "npk") fertEffect = 1 + 0.45 * dose;
     if (fertilizer === "organic") fertEffect = 1 + 0.25 * dose;
     if (dose > 0.85) stress += 1.3;
     if (fertilizer === "none") fertEffect = 0.7;
     
-    // Faktor lingkungan (0-1)
     let waterFactor = Math.min(1, water / 100) * (water > 150 ? 0.7 : 1);
     let lightFactor = Math.min(1, light / 80) * (light > 95 ? 0.65 : 1);
     let tempFactor = (temp >= 20 && temp <= 30) ? 1 : Math.max(0.3, 1 - Math.abs(temp - 26) / 15);
     let phFactor = (ph >= 6 && ph <= 7.5) ? 1 : Math.max(0.3, 1 - Math.abs(ph - 6.8) / 4);
     let humidityFactor = (humidity >= 40 && humidity <= 70) ? 1 : Math.max(0.3, 1 - Math.abs(humidity - 55) / 35);
     
-    // Hukum Minimum Liebig (faktor pembatas)
     let envFactor = Math.min(waterFactor, lightFactor, tempFactor, phFactor, humidityFactor);
     let finalFactor = envFactor * fertEffect;
     
-    // Akumulasi stres
     if (envFactor < 0.55) stress += 0.45;
     else if (envFactor > 0.85) stress = Math.max(0, stress - 0.2);
     else stress = Math.max(0, stress - 0.08);
     
-    // Kematian karena stres
     if (stress > 4.3) {
         let cause = "";
         if (water < 50) cause = "💧 Kekeringan ekstrem";
@@ -140,7 +165,6 @@ function growthStep(previous, currentDay, mode) {
         return { height, stress, dead: true, deadReason: cause };
     }
     
-    // Penuaan alami (setelah 90 hari)
     if (currentDay > 90) {
         let decline = (currentDay - 90) * 2.8;
         height = Math.max(0, height - decline);
@@ -150,7 +174,6 @@ function growthStep(previous, currentDay, mode) {
         return { height, stress };
     }
     
-    // Logistic growth menuju target
     let target = getRealTargetHeight(currentDay);
     let difference = Math.max(0, target - height);
     let growth = difference * 0.4 * finalFactor;
@@ -159,7 +182,7 @@ function growthStep(previous, currentDay, mode) {
     return { height: newHeight, stress };
 }
 
-// ========== SIMULASI 5 HARI STEP ==========
+// ========== SIMULASI ==========
 function runSimulation(finalDay, mode) {
     let results = [];
     let previous = null;
@@ -178,11 +201,9 @@ function updateAllUI() {
     let currentData = (currentMode === "normal") ? dataNormal : dataExperiment;
     let latest = currentData.length ? currentData[currentData.length - 1] : { height: 0, stress: 0, dead: false };
     
-    // Update angka
     get("dayDisplay").innerText = currentDay;
     get("heightDisplay").innerText = latest.height.toFixed(1);
     
-    // Update fase text
     if (latest.dead) {
         get("phaseDisplay").innerHTML = `💀 MATI`;
     } else {
@@ -193,10 +214,8 @@ function updateAllUI() {
         get("phaseDisplay").innerHTML = `${currentPhase.emoji} ${currentPhase.name}`;
     }
     
-    // Animasi tanaman
     updatePlantAnimation(currentDay, latest.dead, latest.stress || 0, latest.height);
     
-    // Treatment Info
     if (currentMode === "normal") {
         get("treatmentInfo").innerHTML = "🌿 MODE NORMAL: Air 100 | Cahaya 80% | Suhu 27°C | pH 6.5 | Kelembaban 60% | Pupuk NPK 50% | Musim Optimal";
     } else {
@@ -210,7 +229,6 @@ function updateAllUI() {
         `;
     }
     
-    // Plant Response
     let target = getRealTargetHeight(currentDay);
     let percent = target > 0 ? ((latest.height / target) * 100).toFixed(0) : 0;
     
@@ -344,10 +362,38 @@ function resetAll() {
     dayExperiment = 0;
     dataNormal = [];
     dataExperiment = [];
+    if (currentMode === "normal") {
+        resetSlidersToOptimal();
+    }
     updateAllUI();
 }
 
-// ========== INITIALISASI & EVENT ==========
+// ========== GANTI MODE ==========
+function changeMode() {
+    let newMode = get("modeSelect").value;
+    let oldMode = currentMode;
+    
+    if (newMode === "normal" && oldMode === "experiment") {
+        // Pindah dari eksperimen ke normal
+        // Reset mode normal ke awal (hari 0)
+        dayNormal = 0;
+        dataNormal = [];
+        // Reset slider ke nilai optimal
+        resetSlidersToOptimal();
+        // Data eksperimen TETAP TERSIMPAN (tidak dihapus)
+    }
+    
+    if (newMode === "experiment" && oldMode === "normal") {
+        // Pindah dari normal ke eksperimen
+        // Data normal tetap tersimpan
+        // Data eksperimen tetap seperti adanya
+    }
+    
+    currentMode = newMode;
+    updateAllUI();
+}
+
+// ========== INITIALISASI ==========
 function init() {
     // Tombol
     get("prevBtn").addEventListener("click", prevDay);
@@ -357,12 +403,9 @@ function init() {
     get("resetAllBtn").addEventListener("click", resetAll);
     
     // Mode
-    get("modeSelect").addEventListener("change", (e) => {
-        currentMode = e.target.value;
-        updateAllUI();
-    });
+    get("modeSelect").addEventListener("change", changeMode);
     
-    // Slider untuk mode eksperimen
+    // Slider untuk mode eksperimen (update realtime)
     const sliders = ["water", "light", "temp", "ph", "humidity", "fertDose"];
     sliders.forEach(id => {
         get(id).addEventListener("input", function() {
@@ -377,6 +420,7 @@ function init() {
     
     get("fertilizer").addEventListener("change", () => {
         if (currentMode === "experiment") {
+            dayExperiment = Math.min(dayExperiment, 150);
             dataExperiment = runSimulation(dayExperiment, "experiment");
             updateAllUI();
         }
@@ -384,14 +428,17 @@ function init() {
     
     get("season").addEventListener("change", () => {
         if (currentMode === "experiment") {
+            dayExperiment = Math.min(dayExperiment, 150);
             dataExperiment = runSimulation(dayExperiment, "experiment");
             updateAllUI();
         }
     });
     
-    // Mulai
+    // Set slider ke nilai optimal di awal
+    resetSlidersToOptimal();
+    
+    // Jalankan
     updateAllUI();
 }
 
-// Jalankan
 init();
