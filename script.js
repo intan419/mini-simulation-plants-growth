@@ -1,260 +1,270 @@
 // ==================== VARIABLES ====================
-let mode = "normal";
-let dayNormal = 0, dayExp = 0;
-let dataNormal = [], dataExp = [];
-let chart = null;
+let currentMode = "normal";
+let dayNormal = 0, dayExperiment = 0;
+let dataNormal = [], dataExperiment = [];
+let growthChart = null;
 
 // DOM Elements
-const el = (id) => document.getElementById(id);
+const get = (id) => document.getElementById(id);
 
-// Phase definition with emoji
-const phases = [
-    { day: 0, name: "Dormancy", emoji: "🌰", size: 55 },
-    { day: 5, name: "Germination", emoji: "🌱", size: 60 },
-    { day: 15, name: "Seedling", emoji: "🌿", size: 70 },
-    { day: 30, name: "Vegetative", emoji: "🍃", size: 80 },
-    { day: 50, name: "Reproductive", emoji: "🌻", size: 90 },
-    { day: 70, name: "Anthesis", emoji: "🌸", size: 95 },
-    { day: 90, name: "Senescence", emoji: "🍂", size: 85 }
+// Fase tanaman (berdasarkan hari)
+const growthPhases = [
+    { day: 0, emoji: "🌰", name: "Biji", size: 55 },
+    { day: 5, emoji: "🌱", name: "Kecambah", size: 60 },
+    { day: 15, emoji: "🌿", name: "Bibit", size: 65 },
+    { day: 30, emoji: "🍃", name: "Vegetatif", size: 75 },
+    { day: 50, emoji: "🌻", name: "Kuncup Bunga", size: 85 },
+    { day: 70, emoji: "🌸", name: "Mekar", size: 90 },
+    { day: 90, emoji: "🍂", name: "Menua", size: 80 }
 ];
 
-// ==================== TARGET HEIGHT (Real Data) ====================
-function getTargetHeight(day) {
+// ========== TARGET TINGGI DUNIA NYATA (cm) ==========
+function getRealTargetHeight(day) {
     if (day <= 0) return 0;
-    if (day <= 10) return 2 + (day / 10) * 3;
-    if (day <= 20) return 5 + ((day - 10) / 10) * 15;
-    if (day <= 40) return 20 + ((day - 20) / 20) * 80;
-    if (day <= 60) return 100 + ((day - 40) / 20) * 80;
-    if (day <= 75) return 180 + ((day - 60) / 15) * 40;
-    if (day <= 90) return 220 + ((day - 75) / 15) * 30;
-    return Math.max(0, 250 - (day - 90) * 5);
+    if (day <= 10) return 2 + (day / 10) * 3;           // 2-5 cm
+    if (day <= 20) return 5 + ((day - 10) / 10) * 15;   // 5-20 cm
+    if (day <= 40) return 20 + ((day - 20) / 20) * 80;  // 20-100 cm
+    if (day <= 60) return 100 + ((day - 40) / 20) * 80; // 100-180 cm
+    if (day <= 75) return 180 + ((day - 60) / 15) * 40; // 180-220 cm
+    if (day <= 90) return 220 + ((day - 75) / 15) * 30; // 220-250 cm
+    return Math.max(0, 250 - (day - 90) * 4.5);         // Stagnan lalu turun
 }
 
-// ==================== UPDATE PLANT ANIMATION ====================
-function updatePlantAnimation(day, isDead, stressLevel) {
-    const plantDiv = document.getElementById("plantEmoji");
+// ========== ANIMASI TANAMAN ==========
+function updatePlantAnimation(day, isDead, stressLevel, currentHeight) {
+    const plantDiv = get("plantEmoji");
     if (!plantDiv) return;
+    
+    plantDiv.classList.remove("grow-effect");
     
     if (isDead) {
         plantDiv.innerHTML = "💀";
-        plantDiv.style.fontSize = "60px";
+        plantDiv.style.fontSize = "55px";
         plantDiv.style.filter = "grayscale(1)";
-        plantDiv.style.animation = "gentleSway 0.8s infinite ease-in-out";
+        plantDiv.style.animation = "sway 1s infinite ease-in-out";
         return;
     }
     
-    // Find current phase
-    let currentPhase = phases[0];
-    for (let p of phases) {
+    // Cari fase berdasarkan hari
+    let currentPhase = growthPhases[0];
+    for (let p of growthPhases) {
         if (day >= p.day) currentPhase = p;
     }
     
     plantDiv.innerHTML = currentPhase.emoji;
-    let newSize = currentPhase.size;
-    // Add extra size based on height
-    let heightVal = parseFloat(el("height")?.innerText || 0);
-    if (heightVal > 100) newSize += Math.min(20, (heightVal - 100) / 8);
-    plantDiv.style.fontSize = newSize + "px";
     
-    // Stress effect: faster shaking
+    // Ukuran berdasarkan tinggi tanaman
+    let sizeBonus = Math.min(30, Math.max(0, currentHeight / 8));
+    let finalSize = currentPhase.size + sizeBonus;
+    plantDiv.style.fontSize = finalSize + "px";
+    
+    // Efek stres (goyang lebih cepat jika stres)
     if (stressLevel > 2) {
-        plantDiv.style.animation = "gentleSway 0.5s infinite ease-in-out";
-        plantDiv.style.filter = "drop-shadow(0 0 6px red)";
+        plantDiv.style.animation = "sway 0.5s infinite ease-in-out";
+        plantDiv.style.filter = "drop-shadow(0 0 8px rgba(255,0,0,0.6))";
     } else {
-        plantDiv.style.animation = "gentleSway 2.2s infinite ease-in-out";
-        plantDiv.style.filter = "drop-shadow(2px 8px 12px rgba(0,0,0,0.3))";
+        plantDiv.style.animation = "sway 3s infinite ease-in-out";
+        plantDiv.style.filter = "drop-shadow(0 8px 12px rgba(0,0,0,0.2))";
     }
+    
+    // Efek tumbuh
+    plantDiv.classList.add("grow-effect");
+    setTimeout(() => plantDiv.classList.remove("grow-effect"), 400);
 }
 
-// ==================== GROWTH MODEL ====================
-function step(previous, day, currentMode) {
+// ========== MODEL PERTUMBUHAN ==========
+function growthStep(previous, currentDay, mode) {
     let height = previous?.height ?? 0;
     let stress = previous?.stress ?? 0;
-    let isDead = previous?.dead ?? false;
-    let deadReason = previous?.deadReason ?? null;
     
-    if (isDead) {
-        let shrink = Math.max(0, height - 3);
-        return { height: shrink, stress, dead: true, deadReason };
+    // Jika sudah mati, terus layu
+    if (previous?.dead) {
+        let newHeight = Math.max(0, height - 3.5);
+        return { height: newHeight, stress, dead: true, deadReason: previous.deadReason };
     }
     
-    // Get parameters
-    let water = parseFloat(el("water").value);
-    let light = parseFloat(el("light").value);
-    let temp = parseFloat(el("temp").value);
-    let ph = parseFloat(el("ph").value);
-    let humidity = parseFloat(el("humidity").value);
-    let fertilizer = el("fertilizer").value;
-    let dose = parseFloat(el("fertDose").value) / 100;
-    let season = el("season").value;
+    // Ambil nilai slider
+    let water = parseFloat(get("water").value);
+    let light = parseFloat(get("light").value);
+    let temp = parseFloat(get("temp").value);
+    let ph = parseFloat(get("ph").value);
+    let humidity = parseFloat(get("humidity").value);
+    let fertilizer = get("fertilizer").value;
+    let dose = parseFloat(get("fertDose").value) / 100;
+    let season = get("season").value;
     
-    // Normal mode override
-    if (currentMode === "normal") {
+    // Mode Normal: parameter optimal
+    if (mode === "normal") {
         water = 100; light = 80; temp = 27; ph = 6.5; humidity = 60; dose = 0.5; fertilizer = "npk";
     }
     
-    // Season effects
-    if (season === "kemarau") { water *= 0.7; humidity *= 0.7; }
-    if (season === "hujan") { water *= 1.3; humidity *= 1.2; }
+    // Efek musim
+    if (season === "kemarau") { water *= 0.65; humidity *= 0.65; }
+    if (season === "hujan") { water *= 1.25; humidity *= 1.2; }
     
-    // Fertilizer effect
+    // Efek pupuk
     let fertEffect = 1.0;
-    if (fertilizer === "npk") fertEffect = 1 + 0.5 * dose;
-    if (fertilizer === "organic") fertEffect = 1 + 0.3 * dose;
-    if (dose > 0.85) stress += 1.2;
+    if (fertilizer === "npk") fertEffect = 1 + 0.45 * dose;
+    if (fertilizer === "organic") fertEffect = 1 + 0.25 * dose;
+    if (dose > 0.85) stress += 1.3;
+    if (fertilizer === "none") fertEffect = 0.7;
     
-    // Environmental factor
-    let envFactor = Math.min(
-        light / (light + 45),
-        water < 75 ? water / 75 : (water > 135 ? 135 / water : 1),
-        (temp >= 20 && temp <= 30) ? 1 : (temp < 20 ? 0.4 : 0.5),
-        (ph >= 6 && ph <= 7.5) ? 1 : 0.5,
-        (humidity >= 40 && humidity <= 70) ? 1 : 0.6
-    );
+    // Faktor lingkungan (0-1)
+    let waterFactor = Math.min(1, water / 100) * (water > 150 ? 0.7 : 1);
+    let lightFactor = Math.min(1, light / 80) * (light > 95 ? 0.65 : 1);
+    let tempFactor = (temp >= 20 && temp <= 30) ? 1 : Math.max(0.3, 1 - Math.abs(temp - 26) / 15);
+    let phFactor = (ph >= 6 && ph <= 7.5) ? 1 : Math.max(0.3, 1 - Math.abs(ph - 6.8) / 4);
+    let humidityFactor = (humidity >= 40 && humidity <= 70) ? 1 : Math.max(0.3, 1 - Math.abs(humidity - 55) / 35);
     
-    // Stress accumulation
+    // Hukum Minimum Liebig (faktor pembatas)
+    let envFactor = Math.min(waterFactor, lightFactor, tempFactor, phFactor, humidityFactor);
+    let finalFactor = envFactor * fertEffect;
+    
+    // Akumulasi stres
     if (envFactor < 0.55) stress += 0.45;
     else if (envFactor > 0.85) stress = Math.max(0, stress - 0.2);
-    else stress = Math.max(0, stress - 0.05);
+    else stress = Math.max(0, stress - 0.08);
     
-    // Death by stress
-    if (stress > 4.2) {
+    // Kematian karena stres
+    if (stress > 4.3) {
         let cause = "";
-        if (water < 55) cause = "💧 Kekeringan ekstrem";
-        else if (water > 160) cause = "💧 Kebanjiran/akar busuk";
-        else if (light < 40) cause = "☀️ Kekurangan sinar matahari";
-        else if (light > 95) cause = "☀️ Terlalu terik";
-        else if (temp < 16) cause = "🌡️ Suhu terlalu dingin";
-        else if (temp > 36) cause = "🌡️ Suhu terlalu panas";
+        if (water < 50) cause = "💧 Kekeringan ekstrem";
+        else if (water > 170) cause = "💧 Kebanjiran / akar busuk";
+        else if (light < 35) cause = "☀️ Kekurangan sinar matahari";
+        else if (light > 97) cause = "☀️ Sinar matahari terlalu terik";
+        else if (temp < 15) cause = "🌡️ Suhu terlalu dingin";
+        else if (temp > 37) cause = "🌡️ Suhu terlalu panas";
         else if (ph < 4.5) cause = "🧪 Tanah terlalu asam";
         else if (ph > 8.2) cause = "🧪 Tanah terlalu basa";
         else cause = "⚠️ Stres lingkungan parah";
         return { height, stress, dead: true, deadReason: cause };
     }
     
-    // Senescence (old age decline)
-    if (day > 90) {
-        let decline = (day - 90) * 2.6;
+    // Penuaan alami (setelah 90 hari)
+    if (currentDay > 90) {
+        let decline = (currentDay - 90) * 2.8;
         height = Math.max(0, height - decline);
-        if (height < 1 || day > 135) {
-            return { height: 0, stress, dead: true, deadReason: "🍂 Usia tua (selesai siklus hidup)" };
+        if (height < 1 || currentDay > 135) {
+            return { height: 0, stress, dead: true, deadReason: "🍂 Usia tua (siklus hidup selesai)" };
         }
         return { height, stress };
     }
     
-    // Logistic growth toward target
-    let target = getTargetHeight(day);
+    // Logistic growth menuju target
+    let target = getRealTargetHeight(currentDay);
     let difference = Math.max(0, target - height);
-    let growthAmount = difference * 0.38 * envFactor * fertEffect;
-    let newHeight = height + growthAmount;
-    newHeight = Math.min(265, Math.max(0, newHeight));
+    let growth = difference * 0.4 * finalFactor;
+    let newHeight = Math.min(265, Math.max(0, height + growth));
     
     return { height: newHeight, stress };
 }
 
-// ==================== SIMULATION ====================
-function runSimulation(finalDay, currentMode) {
+// ========== SIMULASI 5 HARI STEP ==========
+function runSimulation(finalDay, mode) {
     let results = [];
     let previous = null;
-    for (let d = 5; d <= finalDay; d += 5) {
-        let result = step(previous, d, currentMode);
-        results.push(result);
-        if (result.dead) break;
-        previous = result;
+    for (let day = 5; day <= finalDay; day += 5) {
+        let stepResult = growthStep(previous, day, mode);
+        results.push(stepResult);
+        if (stepResult.dead) break;
+        previous = stepResult;
     }
     return results;
 }
 
-// ==================== UI UPDATES ====================
-function updateUI() {
-    let currentDay = (mode === "normal") ? dayNormal : dayExp;
-    let currentData = (mode === "normal") ? dataNormal : dataExp;
+// ========== UPDATE SEMUA UI ==========
+function updateAllUI() {
+    let currentDay = (currentMode === "normal") ? dayNormal : dayExperiment;
+    let currentData = (currentMode === "normal") ? dataNormal : dataExperiment;
     let latest = currentData.length ? currentData[currentData.length - 1] : { height: 0, stress: 0, dead: false };
     
-    document.getElementById("day").innerText = currentDay;
-    document.getElementById("height").innerText = latest.height.toFixed(1);
+    // Update angka
+    get("dayDisplay").innerText = currentDay;
+    get("heightDisplay").innerText = latest.height.toFixed(1);
     
-    // Update phase text & animation
-    let deadStatus = latest.dead || false;
-    let stressLevel = latest.stress || 0;
-    updatePlantAnimation(currentDay, deadStatus, stressLevel);
-    
-    // Phase text
-    if (deadStatus) {
-        let reason = latest.deadReason || "Mati";
-        document.getElementById("phase").innerHTML = `💀 ${reason}`;
+    // Update fase text
+    if (latest.dead) {
+        get("phaseDisplay").innerHTML = `💀 MATI`;
     } else {
-        let phaseNow = phases[0];
-        for (let p of phases) if (currentDay >= p.day) phaseNow = p;
-        document.getElementById("phase").innerHTML = `${phaseNow.emoji} ${phaseNow.name}`;
+        let currentPhase = growthPhases[0];
+        for (let p of growthPhases) {
+            if (currentDay >= p.day) currentPhase = p;
+        }
+        get("phaseDisplay").innerHTML = `${currentPhase.emoji} ${currentPhase.name}`;
     }
     
-    // Treatment info
-    let treatmentHtml = "";
-    if (mode === "normal") {
-        treatmentHtml = "🌿 Mode Normal: Air 100 | Cahaya 80% | Suhu 27°C | pH 6.5 | Kelembaban 60% | Pupuk NPK 50%";
+    // Animasi tanaman
+    updatePlantAnimation(currentDay, latest.dead, latest.stress || 0, latest.height);
+    
+    // Treatment Info
+    if (currentMode === "normal") {
+        get("treatmentInfo").innerHTML = "🌿 MODE NORMAL: Air 100 | Cahaya 80% | Suhu 27°C | pH 6.5 | Kelembaban 60% | Pupuk NPK 50% | Musim Optimal";
     } else {
-        treatmentHtml = `
-            💧 Air: ${el("water").value} (ideal 80-120)<br>
-            ☀️ Cahaya: ${el("light").value}% (70-90)<br>
-            🌡️ Suhu: ${el("temp").value}°C (22-30)<br>
-            🧪 pH: ${el("ph").value} (6-7.5)<br>
-            💨 Kelembaban: ${el("humidity").value}% (40-70)<br>
-            🌾 Pupuk: ${el("fertDose").value}% (40-70)
+        get("treatmentInfo").innerHTML = `
+            💧 Air: ${get("water").value} (ideal 80-120)<br>
+            ☀️ Cahaya: ${get("light").value}% (ideal 70-90)<br>
+            🌡️ Suhu: ${get("temp").value}°C (ideal 22-30)<br>
+            🧪 pH: ${get("ph").value} (ideal 6-7.5)<br>
+            💨 Kelembaban: ${get("humidity").value}% (ideal 40-70)<br>
+            🌾 Pupuk: ${get("fertDose").value}% (ideal 40-70)
         `;
     }
-    document.getElementById("treatmentInfo").innerHTML = treatmentHtml;
     
-    // Plant response
-    let targetNow = getTargetHeight(currentDay);
-    let percent = targetNow > 0 ? ((latest.height / targetNow) * 100).toFixed(0) : 0;
-    if (mode === "normal") {
-        document.getElementById("plantInfo").innerHTML = `🌱 Tumbuh optimal<br>📊 Target: ${targetNow.toFixed(1)} cm<br>🌿 Aktual: ${latest.height.toFixed(1)} cm (${percent}%)`;
+    // Plant Response
+    let target = getRealTargetHeight(currentDay);
+    let percent = target > 0 ? ((latest.height / target) * 100).toFixed(0) : 0;
+    
+    if (currentMode === "normal") {
+        get("plantInfo").innerHTML = `🌱 TUMBUH OPTIMAL<br>📊 Target: ${target.toFixed(1)} cm<br>🌿 Aktual: ${latest.height.toFixed(1)} cm<br>✅ Capaian: ${percent}% dari target dunia nyata`;
     } else if (latest.dead) {
-        document.getElementById("plantInfo").innerHTML = `💀 Mati: ${latest.deadReason || "stres"}<br>📏 Tinggi akhir: ${latest.height.toFixed(1)} cm`;
+        get("plantInfo").innerHTML = `💀 TANAMAN MATI<br>📏 Tinggi akhir: ${latest.height.toFixed(1)} cm<br>⚠️ Penyebab: ${latest.deadReason || "stres lingkungan"}`;
     } else {
-        let stressMsg = latest.stress > 2 ? `⚠️ Stres (${latest.stress.toFixed(1)}/5)` : "✅ Stres minimal";
-        document.getElementById("plantInfo").innerHTML = `🌿 ${stressMsg}<br>📊 Target: ${targetNow.toFixed(1)} cm<br>🌱 Aktual: ${latest.height.toFixed(1)} cm (${percent}%)`;
+        let stressText = latest.stress > 2 ? `⚠️ Stres: ${latest.stress.toFixed(1)}/5` : "✅ Stres minimal";
+        get("plantInfo").innerHTML = `🌱 STATUS TUMBUH<br>📊 Target: ${target.toFixed(1)} cm<br>🌿 Aktual: ${latest.height.toFixed(1)} cm<br>📈 Capaian: ${percent}%<br>${stressText}`;
     }
     
     drawChart();
 }
 
-// ==================== CHART ====================
+// ========== GRAFIK ==========
 function drawChart() {
-    const maxLen = Math.max(dataNormal.length, dataExp.length);
-    const labels = Array.from({ length: maxLen }, (_, i) => (i + 1) * 5);
-    const canvas = document.getElementById("growthChart");
+    const maxLen = Math.max(dataNormal.length, dataExperiment.length);
+    const labels = [];
+    for (let i = 0; i < maxLen; i++) {
+        labels.push((i + 1) * 5);
+    }
+    
+    const canvas = get("growthChart");
     if (!canvas) return;
     
-    if (chart) chart.destroy();
+    if (growthChart) growthChart.destroy();
     
-    chart = new Chart(canvas, {
+    growthChart = new Chart(canvas, {
         type: "line",
         data: {
             labels: labels,
             datasets: [
                 {
-                    label: "🌿 Normal (Optimal)",
+                    label: "🌿 Mode Normal (Optimal)",
                     data: dataNormal.map(d => d.height),
-                    borderColor: "#2e7d32",
-                    backgroundColor: "rgba(46,125,50,0.05)",
+                    borderColor: "#22c55e",
+                    backgroundColor: "rgba(34, 197, 94, 0.1)",
                     borderWidth: 3,
                     fill: true,
                     tension: 0.3,
-                    pointRadius: 4,
-                    pointBackgroundColor: "#2e7d32"
+                    pointRadius: 5,
+                    pointBackgroundColor: "#22c55e"
                 },
                 {
-                    label: "🧪 Eksperimen",
-                    data: dataExp.map(d => d.height),
-                    borderColor: "#d32f2f",
-                    backgroundColor: "rgba(211,47,47,0.05)",
+                    label: "🧪 Mode Eksperimen",
+                    data: dataExperiment.map(d => d.height),
+                    borderColor: "#ef4444",
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
                     borderWidth: 3,
                     fill: true,
                     tension: 0.3,
-                    pointRadius: 4,
-                    pointBackgroundColor: "#d32f2f"
+                    pointRadius: 5,
+                    pointBackgroundColor: "#ef4444"
                 }
             ]
         },
@@ -262,15 +272,18 @@ function drawChart() {
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
+                legend: { position: "top", labels: { font: { size: 11 } } },
                 tooltip: {
                     callbacks: {
                         label: (ctx) => {
                             let val = ctx.raw;
-                            return `${ctx.dataset.label}: ${val.toFixed(1)} cm`;
+                            let isDead = ctx.dataset.label.includes("Normal") 
+                                ? dataNormal[ctx.dataIndex]?.dead 
+                                : dataExperiment[ctx.dataIndex]?.dead;
+                            return `${ctx.dataset.label}: ${val.toFixed(1)} cm${isDead ? " (MATI)" : ""}`;
                         }
                     }
-                },
-                legend: { position: "top" }
+                }
             },
             scales: {
                 y: { title: { display: true, text: "Tinggi (cm)" }, min: 0, max: 280 },
@@ -280,111 +293,105 @@ function drawChart() {
     });
 }
 
-// ==================== NAVIGATION & RESET ====================
+// ========== FUNGSI TOMBOL ==========
 function nextDay() {
-    if (mode === "normal") {
+    if (currentMode === "normal") {
         dayNormal = Math.min(dayNormal + 5, 150);
         dataNormal = runSimulation(dayNormal, "normal");
     } else {
-        dayExp = Math.min(dayExp + 5, 150);
-        dataExp = runSimulation(dayExp, "experiment");
+        dayExperiment = Math.min(dayExperiment + 5, 150);
+        dataExperiment = runSimulation(dayExperiment, "experiment");
     }
-    updateUI();
+    updateAllUI();
 }
 
 function prevDay() {
-    if (mode === "normal" && dayNormal >= 5) {
+    if (currentMode === "normal" && dayNormal >= 5) {
         dayNormal -= 5;
         dataNormal = runSimulation(dayNormal, "normal");
     }
-    if (mode === "experiment" && dayExp >= 5) {
-        dayExp -= 5;
-        dataExp = runSimulation(dayExp, "experiment");
+    if (currentMode === "experiment" && dayExperiment >= 5) {
+        dayExperiment -= 5;
+        dataExperiment = runSimulation(dayExperiment, "experiment");
     }
-    updateUI();
+    updateAllUI();
 }
 
 function resetCurrentMode() {
-    if (mode === "normal") {
+    if (currentMode === "normal") {
         dayNormal = 0;
         dataNormal = [];
     } else {
-        dayExp = 0;
-        dataExp = [];
+        dayExperiment = 0;
+        dataExperiment = [];
     }
-    updateUI();
+    updateAllUI();
 }
 
 function resetOtherMode() {
-    if (mode === "normal") {
-        dayExp = 0;
-        dataExp = [];
+    if (currentMode === "normal") {
+        dayExperiment = 0;
+        dataExperiment = [];
     } else {
         dayNormal = 0;
         dataNormal = [];
     }
-    updateUI();
+    updateAllUI();
 }
 
-function resetAllData() {
+function resetAll() {
     dayNormal = 0;
-    dayExp = 0;
+    dayExperiment = 0;
     dataNormal = [];
-    dataExp = [];
-    updateUI();
+    dataExperiment = [];
+    updateAllUI();
 }
 
-// ==================== EVENT LISTENERS ====================
-function bindEvents() {
-    document.getElementById("mode").addEventListener("change", (e) => {
-        mode = e.target.value;
-        updateUI();
+// ========== INITIALISASI & EVENT ==========
+function init() {
+    // Tombol
+    get("prevBtn").addEventListener("click", prevDay);
+    get("nextBtn").addEventListener("click", nextDay);
+    get("resetCurrentBtn").addEventListener("click", resetCurrentMode);
+    get("resetOtherBtn").addEventListener("click", resetOtherMode);
+    get("resetAllBtn").addEventListener("click", resetAll);
+    
+    // Mode
+    get("modeSelect").addEventListener("change", (e) => {
+        currentMode = e.target.value;
+        updateAllUI();
     });
     
-    document.getElementById("nextBtn").addEventListener("click", nextDay);
-    document.getElementById("prevBtn").addEventListener("click", prevDay);
-    document.getElementById("resetModeBtn").addEventListener("click", resetCurrentMode);
-    document.getElementById("resetPrevBtn").addEventListener("click", resetOtherMode);
-    document.getElementById("resetAllBtn").addEventListener("click", resetAllData);
-    
-    // Live update on slider change for experiment mode
+    // Slider untuk mode eksperimen
     const sliders = ["water", "light", "temp", "ph", "humidity", "fertDose"];
     sliders.forEach(id => {
-        document.getElementById(id).addEventListener("input", function() {
-            document.getElementById(id + "Val").innerText = this.value;
-            if (mode === "experiment") {
-                if (mode === "experiment") {
-                    dayExp = Math.min(dayExp, 150);
-                    dataExp = runSimulation(dayExp, "experiment");
-                    updateUI();
-                }
+        get(id).addEventListener("input", function() {
+            get(id + "Val").innerText = this.value;
+            if (currentMode === "experiment") {
+                dayExperiment = Math.min(dayExperiment, 150);
+                dataExperiment = runSimulation(dayExperiment, "experiment");
+                updateAllUI();
             }
         });
     });
     
-    // For select elements
-    document.getElementById("fertilizer").addEventListener("change", () => {
-        if (mode === "experiment") {
-            dayExp = Math.min(dayExp, 150);
-            dataExp = runSimulation(dayExp, "experiment");
-            updateUI();
+    get("fertilizer").addEventListener("change", () => {
+        if (currentMode === "experiment") {
+            dataExperiment = runSimulation(dayExperiment, "experiment");
+            updateAllUI();
         }
     });
-    document.getElementById("season").addEventListener("change", () => {
-        if (mode === "experiment") {
-            dayExp = Math.min(dayExp, 150);
-            dataExp = runSimulation(dayExp, "experiment");
-            updateUI();
+    
+    get("season").addEventListener("change", () => {
+        if (currentMode === "experiment") {
+            dataExperiment = runSimulation(dayExperiment, "experiment");
+            updateAllUI();
         }
     });
+    
+    // Mulai
+    updateAllUI();
 }
 
-// ==================== INITIALIZE ====================
-function init() {
-    bindEvents();
-    dayNormal = 0; dayExp = 0;
-    dataNormal = []; dataExp = [];
-    updateUI();
-}
-
+// Jalankan
 init();
